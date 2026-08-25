@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 import { Container, Kicker, CTA } from '@/components/PageBits';
+import { ShareModal, type ShareSpec } from '@/components/ShareCard';
 import { OFFICIAL_LINKS } from '@/data/ecosystem';
 import { useAudio } from '@/audio/AudioProvider';
 
@@ -100,6 +101,21 @@ export function CuratorStudio() {
 
   const copySpec = () => { click(); navigator.clipboard?.writeText(specText).catch(() => {}); };
   const copyLink = () => { click(); navigator.clipboard?.writeText(window.location.href).catch(() => {}); };
+
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareSpec: ShareSpec = {
+    eyebrow: 'Prosper · Curator Studio',
+    title: s.name || 'Draft Vault',
+    accentWord: s.category || undefined,
+    stats: [
+      { label: 'Max drawdown', value: `${s.maxDrawdown}%`, color: '#48e8ac' },
+      { label: 'Leverage cap', value: `${s.leverage}×`, color: '#c3cfc7' },
+      { label: 'Perf fee', value: `${s.perfFee}%`, color: '#ecd28a' },
+      { label: 'Mgmt fee', value: `${s.mgmtFee}%`, color: '#ecd28a' },
+    ],
+    detail: s.thesis || 'One Vault → Vault Shares (capital, tracks NAV) + p{VAULT} (conviction, bonding curve → DEX).',
+  };
+  const shareCaption = `Drafted a Prosper Vault in the Atlas Curator Studio${s.name ? `: "${s.name}"` : ''}${s.category ? ` (${s.category})` : ''} — ${s.perfFee}% perf fee, ${s.maxDrawdown}% max drawdown. Design yours:`;
 
   return (
     <div style={{ paddingTop: 100, paddingBottom: 96 }}>
@@ -228,8 +244,9 @@ export function CuratorStudio() {
         {/* actions */}
         <motion.div variants={rise} initial="hidden" whileInView="show" viewport={{ once: true }} style={{ marginTop: 34 }}>
           <div className="flex items-center gap-3 flex-wrap" style={{ justifyContent: 'center' }}>
+            <button onClick={() => { click(); setShareOpen(true); }} className="pressable font-mono studio-action" style={{ color: 'var(--primary)', borderColor: 'rgba(228,200,119,0.5)', background: 'linear-gradient(180deg, rgba(228,200,119,0.12), rgba(228,200,119,0.03))' }}>Share as card</button>
             <button onClick={copySpec} className="pressable font-mono studio-action">Copy spec sheet</button>
-            <button onClick={copyLink} className="pressable font-mono studio-action">Share draft link</button>
+            <button onClick={copyLink} className="pressable font-mono studio-action">Share link</button>
             <CTA primary href={OFFICIAL_LINKS.becomeCurator}>Apply as a Curator</CTA>
           </div>
           <motion.p className="font-mono" style={{ textAlign: 'center', marginTop: 16, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: ready ? 'var(--emerald-glow)' : 'rgba(198,210,202,0.55)' }}
@@ -238,6 +255,8 @@ export function CuratorStudio() {
           </motion.p>
         </motion.div>
       </Container>
+
+      <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} spec={shareSpec} caption={shareCaption} url={typeof window !== 'undefined' ? window.location.href : ''} />
     </div>
   );
 }

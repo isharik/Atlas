@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 import { Container, Kicker, CTA } from '@/components/PageBits';
+import { ShareModal, type ShareSpec } from '@/components/ShareCard';
 import { useAudio } from '@/audio/AudioProvider';
 
 const ease = [0.23, 1, 0.32, 1] as [number, number, number, number];
@@ -114,6 +115,21 @@ export function Sandbox() {
     click();
     navigator.clipboard?.writeText(window.location.href).catch(() => {});
   };
+
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareSpec: ShareSpec = {
+    eyebrow: 'Prosper · Mechanics Sandbox',
+    title: 'One launch,',
+    accentWord: 'two assets.',
+    stats: [
+      { label: 'Allocator return', value: pct(allocatorReturn), color: allocatorReturn >= 0 ? '#48e8ac' : '#e0776f' },
+      { label: 'Net NAV', value: usd(netNav), color: '#35cf9b' },
+      { label: 'p{VAULT}', value: mult(priceMult), color: '#ecd28a' },
+      { label: 'Stage', value: graduated ? 'Open DEX' : 'Bonding curve', color: '#c3cfc7' },
+    ],
+    detail: `Scenario — ${usd(sc.capital)} deposited · ${pct(sc.ret)} strategy return · ${sc.fee}% curator fee · ${usd(sc.conviction)} conviction inflow.`,
+  };
+  const shareCaption = `Modeled a Prosper Vault in the Atlas Sandbox: ${pct(allocatorReturn)} to allocators, p{VAULT} at ${mult(priceMult)}. Vault Shares track NAV, the p{VAULT} prices conviction — priced separately. Try your own scenario:`;
 
   return (
     <div style={{ paddingTop: 100, paddingBottom: 96 }}>
@@ -242,13 +258,17 @@ export function Sandbox() {
 
         {/* actions */}
         <motion.div variants={rise} initial="hidden" whileInView="show" viewport={viewport} className="flex items-center gap-3 flex-wrap" style={{ marginTop: 34, justifyContent: 'center' }}>
-          <button onClick={copy} className="pressable font-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 24px', fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--text)', background: 'rgba(15,22,18,0.6)', border: '1px solid var(--border-strong)', borderRadius: 8, cursor: 'pointer' }}>
-            Copy this scenario
+          <button onClick={() => { click(); setShareOpen(true); }} className="pressable font-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '14px 26px', fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase', fontWeight: 600, color: 'var(--primary)', background: 'linear-gradient(180deg, rgba(228,200,119,0.12), rgba(228,200,119,0.03))', border: '1px solid rgba(228,200,119,0.5)', borderRadius: 8, cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,240,200,0.16), 0 10px 30px rgba(228,200,119,0.1)' }}>
+            Share as card
           </button>
-          <CTA primary to="/studio">Design your Vault</CTA>
-          <CTA to="/zone/pvault">How p&#123;VAULT&#125; works</CTA>
+          <button onClick={copy} className="pressable font-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '13px 24px', fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--text)', background: 'rgba(15,22,18,0.6)', border: '1px solid var(--border-strong)', borderRadius: 8, cursor: 'pointer' }}>
+            Copy link
+          </button>
+          <CTA to="/studio">Design your Vault</CTA>
         </motion.div>
       </Container>
+
+      <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} spec={shareSpec} caption={shareCaption} url={typeof window !== 'undefined' ? window.location.href : ''} />
     </div>
   );
 }
