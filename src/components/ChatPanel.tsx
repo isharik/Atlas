@@ -53,7 +53,7 @@ export function ChatPanel() {
         onClick={() => { click(); setOpen((v) => !v); }}
         className="pressable"
         aria-label="Ask Prosper"
-        style={{ position: 'fixed', right: 24, bottom: 24, zIndex: 120, display: 'flex', alignItems: 'center', gap: 9, padding: '11px 16px', borderRadius: 999, border: '1px solid rgba(228,200,119,0.4)', background: 'linear-gradient(180deg, rgba(18,30,22,0.92), rgba(13,19,16,0.94))', color: 'var(--primary)', cursor: 'pointer', boxShadow: '0 10px 34px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
+        style={{ position: 'fixed', right: 46, bottom: 46, zIndex: 120, display: 'flex', alignItems: 'center', gap: 9, padding: '11px 16px', borderRadius: 999, border: '1px solid rgba(228,200,119,0.4)', background: 'linear-gradient(180deg, rgba(18,30,22,0.92), rgba(13,19,16,0.94))', color: 'var(--primary)', cursor: 'pointer', boxShadow: '0 10px 34px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}
         initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.6, ease }}
       >
         {open ? <IconClose size={16} /> : <IconChat size={16} />}
@@ -63,7 +63,7 @@ export function ChatPanel() {
       <AnimatePresence>
         {open && (
           <motion.div
-            style={{ position: 'fixed', right: 24, bottom: 80, zIndex: 120, width: 'min(380px, calc(100vw - 32px))', height: 'min(560px, calc(100vh - 140px))', display: 'flex', flexDirection: 'column', borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border)', background: 'linear-gradient(180deg, rgba(19,28,23,0.97), rgba(13,19,16,0.98))', boxShadow: '0 30px 80px rgba(0,0,0,0.6)' }}
+            style={{ position: 'fixed', right: 46, bottom: 104, zIndex: 120, width: 'min(380px, calc(100vw - 72px))', height: 'min(560px, calc(100vh - 170px))', display: 'flex', flexDirection: 'column', borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border)', background: 'linear-gradient(180deg, rgba(19,28,23,0.97), rgba(13,19,16,0.98))', boxShadow: '0 30px 80px rgba(0,0,0,0.6)' }}
             initial={{ opacity: 0, y: 20, scale: 0.96, filter: 'blur(8px)' }}
             animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
             exit={{ opacity: 0, y: 16, scale: 0.97, filter: 'blur(8px)' }}
