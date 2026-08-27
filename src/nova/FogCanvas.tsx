@@ -66,23 +66,37 @@ export function FogCanvas({ className, style }: { className?: string; style?: Re
     window.addEventListener('resize', resize);
     resize();
 
-    let raf = 0;
-    let frame = 0;
-    const loop = (ts: number) => {
-      // reduced-motion: render one static frame, then stop the animation
-      if (!reduce || frame === 0) {
-        gl.uniform1f(uT, reduce ? 3.0 : ts * 0.001);
-        gl.uniform2f(uR, canvas.width, canvas.height);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-        frame++;
-      }
-      if (!reduce) raf = requestAnimationFrame(loop);
+    const draw = (tSec: number) => {
+      gl.uniform1f(uT, tSec);
+      gl.uniform2f(uR, canvas.width, canvas.height);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
-    raf = requestAnimationFrame(loop);
+
+    let raf = 0;
+    let last = -999;
+    const MIN_DT = 33; // ~30fps — the fog drifts slowly, so this is invisible and halves GPU work
+    const loop = (ts: number) => {
+      if (ts - last >= MIN_DT) { last = ts; draw(ts * 0.001); }
+      raf = requestAnimationFrame(loop);
+    };
+
+    if (reduce) {
+      draw(3.0); // one static frame
+    } else {
+      raf = requestAnimationFrame(loop);
+    }
+
+    const onVis = () => {
+      if (reduce) return;
+      if (document.visibilityState === 'visible') { if (!raf) { last = -999; raf = requestAnimationFrame(loop); } }
+      else { cancelAnimationFrame(raf); raf = 0; }
+    };
+    document.addEventListener('visibilitychange', onVis);
 
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', resize);
+      document.removeEventListener('visibilitychange', onVis);
     };
   }, []);
 

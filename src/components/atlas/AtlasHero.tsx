@@ -72,7 +72,8 @@ function Core() {
   }, []);
 
   useFrame((_state, dt) => {
-    if (globe.current) { globe.current.rotation.y += dt * 0.16; globe.current.rotation.x = 0.32; } // always looping
+    const d = Math.min(dt, 0.05); // clamp so a paused→resumed frame doesn't jump
+    if (globe.current) { globe.current.rotation.y += d * 0.16; globe.current.rotation.x = 0.32; } // always looping
   });
 
   return (
@@ -195,7 +196,7 @@ function Scene({ onOpen }: { onOpen: (id: ZoneId) => void }) {
     camera.position.x += (2.6 + px * 1.0 - camera.position.x) * 0.03;
     camera.position.y += (6.9 - py * 0.7 - camera.position.y) * 0.03;
     camera.lookAt(target);
-    if (spin.current) spin.current.rotation.y += dt * 0.09; // whole model loops continuously, always on
+    if (spin.current) spin.current.rotation.y += Math.min(dt, 0.05) * 0.09; // whole model loops; clamp for paused→resume
   });
   return (
     <group>
@@ -221,9 +222,24 @@ export function AtlasHero({ className, style }: { className?: string; style?: Re
   const { click } = useAudio();
   const open = (id: ZoneId) => { click(); navigate(`/zone/${id}`); };
   const mask = 'radial-gradient(130% 130% at 66% 46%, #000 58%, rgba(0,0,0,0.5) 78%, transparent 94%)';
+
+  // only render the scene while it's actually on screen and the tab is visible
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const onScreen = useRef(true);
+  const [active, setActive] = useState(true);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const apply = () => setActive(onScreen.current && document.visibilityState === 'visible');
+    const io = new IntersectionObserver(([e]) => { onScreen.current = e.isIntersecting; apply(); }, { threshold: 0.04 });
+    io.observe(el);
+    document.addEventListener('visibilitychange', apply);
+    return () => { io.disconnect(); document.removeEventListener('visibilitychange', apply); };
+  }, []);
+
   return (
-    <div className={className} style={{ WebkitMaskImage: mask, maskImage: mask, ...style }}>
-      <Canvas dpr={[1, 2]} gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 40, near: 0.1, far: 120, position: [2.6, 6.9, 16.5] }}>
+    <div ref={wrapRef} className={className} style={{ WebkitMaskImage: mask, maskImage: mask, ...style }}>
+      <Canvas frameloop={active ? 'always' : 'never'} dpr={[1, 1.5]} gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 40, near: 0.1, far: 120, position: [2.6, 6.9, 16.5] }}>
         <FitParent />
         <Suspense fallback={null}>
           <Scene onOpen={open} />
