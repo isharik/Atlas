@@ -15,7 +15,7 @@ const GOLD_DEEP = new THREE.Color('#9a7a34');
 const EMERALD = new THREE.Color('#2fbf8f');
 const EMERALD_GLOW = new THREE.Color('#38e0a0');
 const CENTER = new THREE.Vector3(0, 0, 0);
-const ATLAS_OFFSET: [number, number, number] = [2.1, 0, 0]; // shifts the whole model right, leaving room for the hero copy
+const ATLAS_OFFSET: [number, number, number] = [3.3, 0, 0]; // shifts the whole model right, clear of the hero copy
 const RING = 5.2;
 
 function FitParent() {
@@ -189,11 +189,11 @@ function AtlasNode({ zone, angle, onOpen }: { zone: ZoneMeta; angle: number; onO
 function Scene({ onOpen }: { onOpen: (id: ZoneId) => void }) {
   const { camera } = useThree();
   const spin = useRef<THREE.Group>(null!);
-  const target = useMemo(() => new THREE.Vector3(2.1, 0.2, 0), []);
+  const target = useMemo(() => new THREE.Vector3(2.6, 0.2, 0), []);
   useFrame((state, dt) => {
     const px = state.pointer.x, py = state.pointer.y;
-    camera.position.x += (2.1 + px * 1.0 - camera.position.x) * 0.03;
-    camera.position.y += (6.2 - py * 0.7 - camera.position.y) * 0.03;
+    camera.position.x += (2.6 + px * 1.0 - camera.position.x) * 0.03;
+    camera.position.y += (6.9 - py * 0.7 - camera.position.y) * 0.03;
     camera.lookAt(target);
     if (spin.current) spin.current.rotation.y += dt * 0.09; // whole model loops continuously, always on
   });
@@ -220,10 +220,10 @@ export function AtlasHero({ className, style }: { className?: string; style?: Re
   const navigate = useNavigate();
   const { click } = useAudio();
   const open = (id: ZoneId) => { click(); navigate(`/zone/${id}`); };
-  const mask = 'radial-gradient(130% 130% at 60% 46%, #000 58%, rgba(0,0,0,0.5) 78%, transparent 94%)';
+  const mask = 'radial-gradient(130% 130% at 66% 46%, #000 58%, rgba(0,0,0,0.5) 78%, transparent 94%)';
   return (
     <div className={className} style={{ WebkitMaskImage: mask, maskImage: mask, ...style }}>
-      <Canvas dpr={[1, 2]} gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 40, near: 0.1, far: 120, position: [2.1, 6.2, 13] }}>
+      <Canvas dpr={[1, 2]} gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 40, near: 0.1, far: 120, position: [2.6, 6.9, 16.5] }}>
         <FitParent />
         <Suspense fallback={null}>
           <Scene onOpen={open} />
