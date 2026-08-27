@@ -502,6 +502,27 @@ body {
   background: rgba(13, 19, 16, 0.4);
   padding: 24px;
 }
+.pulse-tweet {
+  display: block;
+  text-decoration: none;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(16, 24, 20, 0.6), rgba(11, 16, 13, 0.66));
+  padding: 15px 17px;
+  transition: border-color 200ms var(--ease-out2), transform 200ms var(--ease-out2);
+}
+@media (hover: hover) and (pointer: fine) {
+  .pulse-tweet:hover { border-color: rgba(228, 200, 119, 0.35); transform: translateY(-2px); }
+}
+.pulse-skeleton {
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(234, 230, 218, 0.06), rgba(234, 230, 218, 0.14), rgba(234, 230, 218, 0.06));
+  background-size: 200% 100%;
+  animation: pulse-shimmer 1.4s linear infinite;
+}
+@keyframes pulse-shimmer {
+  to { background-position: -200% 0; }
+}
 
 /* ── Share card ── */
 .share-btn {

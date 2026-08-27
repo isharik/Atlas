@@ -10,7 +10,7 @@ import { OFFICIAL_LINKS } from '@/data/ecosystem';
 
 function Footer() {
   return (
-    <footer className="flex flex-col sm:flex-row items-center justify-between gap-3 font-mono" style={{ padding: '26px 24px', borderTop: '1px solid var(--border)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(198,210,202,0.5)' }}>
+    <footer className="flex flex-col sm:flex-row items-center justify-between gap-3 font-mono" style={{ padding: '26px 24px 96px', borderTop: '1px solid var(--border)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(198,210,202,0.5)' }}>
       <span>© 2026 Prosper Atlas · Community-built</span>
       <span className="hidden sm:inline">Not an official Prosper product</span>
       <span className="flex items-center gap-4">
