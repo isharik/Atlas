@@ -15,6 +15,7 @@ const LINKS = [
   { label: 'Studio', to: '/studio' },
   { label: 'Tracker', to: '/tracker' },
   { label: 'Pulse', to: '/pulse' },
+  { label: 'Create', to: '/create' },
   { label: 'Pharos', to: '/pharos' },
   { label: 'FAQ', to: '/faq' },
 ];

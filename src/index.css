@@ -536,6 +536,97 @@ body {
   to { background-position: -200% 0; }
 }
 
+/* ── Post Studio ── */
+.create-cols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (min-width: 900px) {
+  .create-cols { grid-template-columns: 280px 1fr; gap: 32px; }
+}
+.create-nav__cat {
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--emerald-glow);
+  margin-bottom: 8px;
+}
+.create-nav__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  width: 100%;
+  padding: 10px 13px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  transition: background 180ms var(--ease-out2), border-color 180ms var(--ease-out2);
+}
+@media (hover: hover) and (pointer: fine) {
+  .create-nav__item:hover { background: rgba(15, 22, 18, 0.55); }
+}
+.create-nav__item[data-on='true'] {
+  background: radial-gradient(120% 120% at 0% 0%, rgba(228, 200, 119, 0.1), transparent 60%), rgba(15, 22, 18, 0.6);
+  border-color: rgba(228, 200, 119, 0.4);
+}
+.create-nav__label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.create-nav__item[data-on='true'] .create-nav__label { color: var(--primary); }
+.create-nav__hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mist);
+}
+.create-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.create-card {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(15, 22, 18, 0.55), rgba(13, 19, 16, 0.62));
+}
+.create-post {
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(15, 22, 18, 0.5), rgba(13, 19, 16, 0.58));
+}
+.create-post__text {
+  font-size: 14px;
+  line-height: 1.62;
+  color: var(--text);
+  margin: 0;
+  white-space: pre-wrap;
+}
+.create-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 120px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(228, 200, 119, 0.4);
+  background: rgba(5, 7, 5, 0.55);
+  color: var(--text-hi);
+  font-size: 14px;
+  line-height: 1.6;
+  outline: none;
+}
+.create-textarea:focus { box-shadow: 0 0 0 3px rgba(228, 200, 119, 0.12); }
+
 /* ── Share card ── */
 .share-btn {
   flex: 1 1 120px;

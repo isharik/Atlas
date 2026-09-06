@@ -14,6 +14,7 @@ import { Sandbox } from './pages/Sandbox';
 import { CuratorStudio } from './pages/CuratorStudio';
 import { Tracker } from './pages/Tracker';
 import { Pulse } from './pages/Pulse';
+import { CreatePost } from './pages/CreatePost';
 
 const wrap = (el: React.ReactNode) => <PageTransition>{el}</PageTransition>;
 
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/studio" element={wrap(<CuratorStudio />)} />
           <Route path="/tracker" element={wrap(<Tracker />)} />
           <Route path="/pulse" element={wrap(<Pulse />)} />
+          <Route path="/create" element={wrap(<CreatePost />)} />
           <Route path="/pharos" element={wrap(<Pharos />)} />
           <Route path="/faq" element={wrap(<Faq />)} />
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -6,7 +6,7 @@ export interface ShareSpec {
   eyebrow: string;
   title: string;
   accentWord?: string;   // trailing word of the title rendered in gold
-  stats: ShareStat[];    // 2–4
+  stats?: ShareStat[];   // 0–4; omit for a text-focused concept card
   detail?: string;
   footnote?: string;
 }
@@ -89,36 +89,41 @@ export function drawCard(canvas: HTMLCanvasElement, spec: ShareSpec) {
     ctx.fillText(' ' + spec.accentWord, M + tw, titleY);
   }
 
-  // stats row
-  const stats = spec.stats.slice(0, 4);
-  const cols = stats.length;
+  // stats row (optional — concept cards omit it)
+  const stats = (spec.stats ?? []).slice(0, 4);
   const contentW = W - M * 2;
-  const colW = contentW / cols;
-  const valueSize = cols <= 2 ? 66 : cols === 3 ? 50 : 42;
-  const rowY = 300;
-  stats.forEach((s, i) => {
-    const cx = M + colW * i;
-    // divider
-    if (i > 0) { ctx.strokeStyle = 'rgba(234,230,218,0.12)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cx, rowY - 6); ctx.lineTo(cx, rowY + 96); ctx.stroke(); }
-    const px = cx + (i > 0 ? 28 : 0);
-    ctx.font = '600 15px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.mist;
-    ctx.fillText(s.label.toUpperCase(), px, rowY + 22);
-    const vs = fitFont(ctx, s.value, '"Rajdhani", sans-serif', '700', valueSize, colW - 40 - (i > 0 ? 28 : 0));
-    ctx.font = `700 ${vs}px "Rajdhani", sans-serif`;
-    ctx.fillStyle = s.color ?? PAL.text;
-    ctx.fillText(s.value, px, rowY + 22 + vs + 8);
-  });
+  if (stats.length) {
+    const cols = stats.length;
+    const colW = contentW / cols;
+    const valueSize = cols <= 2 ? 66 : cols === 3 ? 50 : 42;
+    const rowY = 300;
+    stats.forEach((s, i) => {
+      const cx = M + colW * i;
+      if (i > 0) { ctx.strokeStyle = 'rgba(234,230,218,0.12)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cx, rowY - 6); ctx.lineTo(cx, rowY + 96); ctx.stroke(); }
+      const px = cx + (i > 0 ? 28 : 0);
+      ctx.font = '600 15px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.mist;
+      ctx.fillText(s.label.toUpperCase(), px, rowY + 22);
+      const vs = fitFont(ctx, s.value, '"Rajdhani", sans-serif', '700', valueSize, colW - 40 - (i > 0 ? 28 : 0));
+      ctx.font = `700 ${vs}px "Rajdhani", sans-serif`;
+      ctx.fillStyle = s.color ?? PAL.text;
+      ctx.fillText(s.value, px, rowY + 22 + vs + 8);
+    });
+  }
 
-  // detail
+  // detail — sits under the stats when present, or fills the open space (larger) when not
   if (spec.detail) {
-    ctx.font = '400 22px "Archivo", sans-serif'; ctx.fillStyle = PAL.mist;
+    const hasStats = stats.length > 0;
+    const size = hasStats ? 22 : 30;
+    const lh = hasStats ? 30 : 44;
+    ctx.font = `400 ${size}px "Archivo", sans-serif`; ctx.fillStyle = hasStats ? PAL.mist : PAL.text;
     const words = spec.detail.split(' ');
-    let line = '', y = 468;
+    let line = '', y = hasStats ? 468 : 300;
+    const maxY = 520;
     for (const w of words) {
-      if (ctx.measureText(line + w + ' ').width > contentW) { ctx.fillText(line.trim(), M, y); line = w + ' '; y += 30; if (y > 520) break; }
+      if (ctx.measureText(line + w + ' ').width > contentW) { ctx.fillText(line.trim(), M, y); line = w + ' '; y += lh; if (y > maxY) break; }
       else line += w + ' ';
     }
-    if (line.trim()) ctx.fillText(line.trim(), M, y);
+    if (line.trim() && y <= maxY) ctx.fillText(line.trim(), M, y);
   }
 
   // footer
