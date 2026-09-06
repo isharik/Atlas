@@ -219,10 +219,12 @@ export const PROGRAMS: Program[] = [
   },
 ];
 
-/** Ecosystem partners (source: @ProsperTicker). */
+/** Ecosystem partners (source: @ProsperTicker + MemeRWA announcement, 3 Sep 2026). */
 export const PARTNERS = [
   { name: 'Pharos', handle: '@pharos_network', role: 'Scalable RealFi Layer-1 infrastructure' },
-  { name: 'R25', handle: '@R25Official', role: 'Dedicated vault mechanics, where applicable' },
+  { name: 'R25 Protocol', handle: '@R25Official', role: 'Dedicated vault mechanics, where applicable' },
+  { name: 'Stove Finance', handle: '', role: 'First-generation ecosystem partner' },
+  { name: 'TopNod Wallet', handle: '', role: 'First-generation ecosystem partner' },
 ] as const;
 
 /** Real FAQ — every answer is grounded in pros-per.xyz + @ProsperTicker. */
@@ -263,6 +265,16 @@ export const FAQS: Faq[] = [
     to: '/zone/pvault',
   },
   {
+    q: 'What is MemeRWA?',
+    a: 'MemeRWA is the framework Prosper is the first application of (announced 3 Sep 2026). It has three parts: a verifiable economic reference, a predefined mechanism that connects that reference to the market, and an openly traded crypto-native asset — linking real, verifiable performance data to a tradable asset.',
+    to: '/zone/pvault',
+  },
+  {
+    q: 'How does p{VAULT} capture a Curator’s performance?',
+    a: 'When a Curator’s strategy earns performance fees, a share of those fees is used to buy the paired p{VAULT} on the open market — translating verified performance into real demand for the asset.',
+    to: '/zone/pvault',
+  },
+  {
     q: 'How do I become a Curator?',
     a: 'Prosper opened a Founding Curator Cohort with a $50K Seed Fund to onboard the first Curators. You can apply to become a Curator via the official form, and join the community on X.',
     to: '/participate',
@@ -274,8 +286,8 @@ export const FAQS: Faq[] = [
   },
   {
     q: 'Is Prosper live yet?',
-    a: 'Prosper is pre-launch. Vaults are not live yet; the ecosystem is being activated ahead of launch through programs like the Founding Curator Cohort and the Ambassador Program.',
-    to: '/programs',
+    a: 'Prosper is pre-launch, but close: the first Curator-operated Vaults are expected to go live in mid-September 2026. Until then the ecosystem is being activated through programs like the Founding Curator Cohort and the Ambassador Program.',
+    to: '/tracker',
   },
   {
     q: 'What is Pharos, and how does it relate to Prosper?',
@@ -408,6 +420,7 @@ export const ZONE_DETAIL: Record<ZoneId, ZoneDetail> = {
       'Methodology — how the approach actually works',
       'Risk — parameters, drawdown discipline and mandate',
       'Mandate & on-chain market state — legible to anyone',
+      'First strategies span U.S. equities, global market equities and Hyperliquid',
     ],
   },
   vaults: {
@@ -437,6 +450,7 @@ export const ZONE_DETAIL: Record<ZoneId, ZoneDetail> = {
       'Without p{VAULT}: a new strategy faces a cold start — no record, no attention, no capital',
       'With p{VAULT}: price discovery from day one, independent of Vault Shares',
       'Opens on an internal bonding curve, then graduates to open DEX trading',
+      'Performance fees buy the paired p{VAULT} on the open market — verified performance becomes real demand',
       'It is NOT the same as Vault Shares — different purpose entirely',
     ],
   },

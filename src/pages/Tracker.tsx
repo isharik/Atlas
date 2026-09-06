@@ -12,14 +12,23 @@ type State = 'live' | 'closed' | 'launch';
 interface Item { label: string; state: State; note: string; to?: string; href?: string }
 interface Phase { key: string; title: string; caption: string; standing: 'done' | 'current' | 'ahead'; items: Item[] }
 
-// Every status below is grounded in pros-per.xyz + @ProsperTicker. Prosper is pre-launch;
-// no launch date is public, so there is no countdown — only real, observable states.
+// The newest verified update (source: MemeRWA announcement, 3 Sep 2026).
+const LATEST = {
+  date: '3 Sep 2026',
+  title: 'Prosper introduces MemeRWA',
+  body: 'A framework linking verifiable performance data to openly traded crypto-native assets — and the first Curator-operated Vaults are expected mid-September 2026.',
+  href: 'https://www.manilatimes.net/2026/09/03/tmt-newswire/plentisoft/prosper-introduces-memerwa-a-framework-for-bringing-verifiable-performance-data-to-crypto-native-markets/2418128',
+};
+
+// Every status below is grounded in pros-per.xyz + @ProsperTicker + the 3 Sep 2026 MemeRWA
+// announcement. Only real, observable states — no invented countdown.
 const PHASES: Phase[] = [
   {
     key: '01', title: 'Infrastructure', caption: 'The market rails Prosper is built on.', standing: 'done',
     items: [
       { label: 'Pharos — RealFi Layer-1', state: 'live', note: 'Observable, tradable, composable market infrastructure.', to: '/pharos' },
-      { label: 'R25 — vault mechanics', state: 'live', note: 'Dedicated vault mechanics, enabled where applicable.', to: '/pharos' },
+      { label: 'MemeRWA framework', state: 'live', note: 'Verifiable performance data → an openly traded asset. Prosper is its first application (3 Sep 2026).', to: '/zone/pvault' },
+      { label: 'R25 · Stove Finance · TopNod', state: 'live', note: 'First-generation ecosystem partners; vault mechanics where applicable.', to: '/programs' },
     ],
   },
   {
@@ -31,7 +40,7 @@ const PHASES: Phase[] = [
     ],
   },
   {
-    key: '03', title: 'Launch', caption: 'The Performance Market goes live.', standing: 'ahead',
+    key: '03', title: 'Launch', caption: 'Expected mid-September 2026.', standing: 'ahead',
     items: [
       { label: 'Vaults', state: 'launch', note: 'One launch mints two assets — capital and conviction.', to: '/zone/vaults' },
       { label: 'Vault Shares', state: 'launch', note: 'Capital allocation that tracks NAV, for allocators.', to: '/zone/vaults' },
@@ -81,8 +90,20 @@ export function Tracker() {
           Where Prosper is <em style={{ fontStyle: 'italic', color: 'var(--primary)' }}>right now.</em>
         </motion.h1>
         <motion.p className="font-display" style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--mist)', maxWidth: 640 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>
-          Prosper is pre-launch. The ecosystem is being activated ahead of launch — the infrastructure is live, the first programs are running, and the market opens when Vaults go live. Everything below is real and observable.
+          Prosper is pre-launch. The ecosystem is being activated ahead of launch — the infrastructure is live, the first programs are running, and the first Vaults are expected mid-September 2026. Everything below is real and observable.
         </motion.p>
+
+        {/* latest verified update */}
+        <motion.a href={LATEST.href} target="_blank" rel="noreferrer" variants={rise} initial="hidden" whileInView="show" viewport={viewport}
+          className="tracker-latest" style={{ marginTop: 26 }}>
+          <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+            <span className="live-dot" />
+            <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--emerald-glow)' }}>Latest · {LATEST.date}</span>
+          </div>
+          <div className="font-head" style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-hi)' }}>{LATEST.title}</div>
+          <p className="font-display" style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--mist)', margin: '6px 0 0' }}>{LATEST.body}</p>
+          <span className="font-mono" style={{ display: 'inline-block', marginTop: 10, fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--primary)' }}>Read the announcement ↗</span>
+        </motion.a>
 
         {/* phase rail */}
         <motion.div variants={rise} initial="hidden" whileInView="show" viewport={viewport} className="tracker-rail" style={{ marginTop: 40 }}>
