@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion, type PanInfo } from 'framer-motion';
 import { Container, Kicker } from '@/components/PageBits';
 import { drawCard } from '@/components/ShareCard';
-import { POST_KITS, POST_CATEGORIES, type PostTopic } from '@/data/postkits';
+import { IconArrow } from '@/components/ui/icons';
+import { POST_KITS, POST_CATEGORIES, POST_LENGTHS, type PostTopic } from '@/data/postkits';
 import { useAudio } from '@/audio/AudioProvider';
 
 const ease = [0.23, 1, 0.32, 1] as [number, number, number, number];
@@ -56,40 +57,103 @@ function TopicCard({ topic }: { topic: PostTopic }) {
   );
 }
 
-function PostVariant({ text, index }: { text: string; index: number }) {
-  const reduce = useReducedMotion();
+/** A single post (editable) + copy / post-to-X. Entrance is handled by the carousel. */
+function PostVariant({ text }: { text: string }) {
   const { click } = useAudio();
   const [draft, setDraft] = useState(text);
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
   useEffect(() => { setDraft(text); setEditing(false); }, [text]);
 
-  const value = draft;
-  const copy = () => { click(); navigator.clipboard?.writeText(value).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000); };
-  const postX = () => { click(); window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`${value}\n\n${siteUrl()}`)}`, '_blank', 'noopener'); };
+  const copy = () => { click(); navigator.clipboard?.writeText(draft).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const postX = () => { click(); window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`${draft}\n\n${siteUrl()}`)}`, '_blank', 'noopener'); };
 
   return (
-    <motion.div className="create-post"
-      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.06 + index * 0.06, duration: 0.4, ease }}>
-      <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
-        <span className="font-mono" style={{ fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--mist)' }}>Option {String.fromCharCode(65 + index)}</span>
+    <div className="create-post">
+      <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
+        <span className="font-mono" style={{ fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--mist)' }}>Use this post</span>
         <button onClick={() => { click(); setEditing((v) => !v); }} className="pressable font-mono" style={{ fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: editing ? 'var(--primary)' : 'var(--mist)', background: 'none', border: 'none', cursor: 'pointer' }}>
           {editing ? 'Done' : 'Customize'}
         </button>
       </div>
 
       {editing ? (
-        <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={Math.max(4, Math.ceil(draft.length / 46))} className="create-textarea font-display" aria-label="Edit post" />
+        <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={Math.min(20, Math.max(6, Math.ceil(draft.length / 42)))} className="create-textarea font-display" aria-label="Edit post" />
       ) : (
-        <p className="font-display create-post__text">{value}</p>
+        <p className="font-display create-post__text">{draft}</p>
       )}
 
-      <div className="flex items-center gap-2.5" style={{ marginTop: 14 }}>
+      <div className="flex items-center gap-2.5" style={{ marginTop: 16 }}>
         <button onClick={postX} className="pressable share-btn share-btn--gold" style={{ flex: '1 1 auto' }}>Post on X</button>
         <button onClick={copy} className="pressable share-btn" style={{ flex: '0 0 auto' }}>{copied ? 'Copied ✓' : 'Copy text'}</button>
       </div>
-    </motion.div>
+    </div>
+  );
+}
+
+/** One post at a time — arrows, dots, swipe, keyboard. */
+function PostCarousel({ topic }: { topic: PostTopic }) {
+  const reduce = useReducedMotion();
+  const { click } = useAudio();
+  const [i, setI] = useState(0);
+  const [dir, setDir] = useState(1);
+  const n = topic.posts.length;
+  useEffect(() => { setI(0); setDir(1); }, [topic.id]);
+
+  const go = (next: number) => {
+    const t = (next + n) % n;
+    setDir(next > i ? 1 : -1);
+    if (t !== i) click();
+    setI(t);
+  };
+
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); go(i - 1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); go(i + 1); }
+    };
+    el.addEventListener('keydown', onKey);
+    return () => el.removeEventListener('keydown', onKey);
+  }, [i]);
+
+  const onDragEnd = (_e: unknown, info: PanInfo) => {
+    if (info.offset.x < -60 || info.velocity.x < -350) go(i + 1);
+    else if (info.offset.x > 60 || info.velocity.x > 350) go(i - 1);
+  };
+
+  return (
+    <div ref={ref} tabIndex={0} role="group" aria-label="Post options" style={{ outline: 'none' }}>
+      <div className="create-carousel__head">
+        <span className="font-mono" style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--primary)' }}>
+          {POST_LENGTHS[i] ?? `Option ${i + 1}`}
+          <span style={{ color: 'var(--mist)', marginLeft: 8 }}>{i + 1} / {n}</span>
+        </span>
+        <div className="flex items-center gap-2">
+          <button aria-label="Previous post" onClick={() => go(i - 1)} className="pressable create-arrow"><span style={{ transform: 'scaleX(-1)', display: 'inline-flex' }}><IconArrow size={15} /></span></button>
+          <button aria-label="Next post" onClick={() => go(i + 1)} className="pressable create-arrow"><IconArrow size={15} /></button>
+        </div>
+      </div>
+
+      <motion.div
+        key={i}
+        drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.14} onDragEnd={onDragEnd}
+        initial={reduce ? { opacity: 0 } : { opacity: 0, x: dir * 56 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 32, mass: 0.8 }}
+        style={{ cursor: 'grab' }}
+      >
+        <PostVariant text={topic.posts[i]} />
+      </motion.div>
+
+      <div className="flex items-center justify-center gap-2" style={{ marginTop: 16 }}>
+        {topic.posts.map((_, d) => (
+          <button key={d} aria-label={`Post ${d + 1}`} onClick={() => go(d)} className="pressable"
+            style={{ height: 6, width: d === i ? 24 : 6, borderRadius: 999, border: 'none', cursor: 'pointer', padding: 0, background: d === i ? 'var(--primary)' : 'rgba(159,176,166,0.3)', boxShadow: d === i ? '0 0 10px rgba(228,200,119,0.6)' : 'none', transition: 'width 260ms var(--ease-out2), background 200ms ease' }} />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -112,7 +176,7 @@ export function CreatePost() {
           Post about Prosper. <em style={{ fontStyle: 'italic', color: 'var(--primary)' }}>Via Atlas.</em>
         </motion.h1>
         <motion.p className="font-display" style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--mist)', maxWidth: 660 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>
-          Pick a topic. Grab a ready-to-post caption written to actually sound human, download the matching card, and share. Edit anything before you post — it's yours.
+          Pick a topic, then flip through ready-to-post captions in three lengths. Grab the matching card, edit anything you like, and share. It's yours.
         </motion.p>
 
         <div className="create-cols" style={{ marginTop: 40 }}>
@@ -143,9 +207,7 @@ export function CreatePost() {
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             transition={{ type: 'spring', stiffness: 240, damping: 30, mass: 0.8 }}>
             <TopicCard topic={topic} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {topic.posts.map((p, i) => <PostVariant key={topic.id + i} text={p} index={i} />)}
-            </div>
+            <PostCarousel topic={topic} />
           </motion.section>
         </div>
 

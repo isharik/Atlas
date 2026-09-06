@@ -9,6 +9,32 @@ export interface ShareSpec {
   stats?: ShareStat[];   // 0–4; omit for a text-focused concept card
   detail?: string;
   footnote?: string;
+  poster?: boolean;      // graphical layout: big title, one short line, network motif, minimal text
+}
+
+/** Static wireframe-network motif (echoes the app's globe) drawn into the canvas. */
+function drawNetwork(ctx: CanvasRenderingContext2D, cx: number, cy: number, R: number) {
+  const N = 42, pts: { x: number; y: number; z: number }[] = [];
+  const gA = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < N; i++) {
+    const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = gA * i;
+    pts.push({ x: Math.cos(th) * r, y, z: Math.sin(th) * r });
+  }
+  const yaw = 0.6, cY = Math.cos(yaw), sY = Math.sin(yaw), tilt = 0.42, cX = Math.cos(tilt), sX = Math.sin(tilt);
+  const proj = pts.map((p) => {
+    let x = p.x * cY + p.z * sY, z = -p.x * sY + p.z * cY;
+    const yy = p.y * cX - z * sX; z = p.y * sX + z * cX;
+    return { sx: cx + x * R, sy: cy + yy * R, d: (z + 1) / 2 };
+  });
+  for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+    const dd = (pts[i].x - pts[j].x) ** 2 + (pts[i].y - pts[j].y) ** 2 + (pts[i].z - pts[j].z) ** 2;
+    if (dd < 0.34) {
+      const a = proj[i], b = proj[j], dep = (a.d + b.d) / 2;
+      ctx.strokeStyle = `rgba(72,232,172,${0.05 + dep * 0.18})`; ctx.lineWidth = 0.6 + dep;
+      ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
+    }
+  }
+  for (const p of proj) { ctx.beginPath(); ctx.arc(p.sx, p.sy, 1 + p.d * 2.2, 0, Math.PI * 2); ctx.fillStyle = `rgba(140,240,200,${0.25 + p.d * 0.6})`; ctx.fill(); }
 }
 
 const PAL = {
@@ -58,11 +84,20 @@ export function drawCard(canvas: HTMLCanvasElement, spec: ShareSpec) {
   glow.addColorStop(0, 'rgba(53,207,155,0.14)'); glow.addColorStop(1, 'rgba(53,207,155,0)');
   ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
 
+  // graphical network motif (poster cards) — sits on the right, behind the text
+  if (spec.poster) {
+    const mg = ctx.createRadialGradient(940, 330, 30, 940, 330, 300);
+    mg.addColorStop(0, 'rgba(53,207,155,0.12)'); mg.addColorStop(1, 'rgba(53,207,155,0)');
+    ctx.fillStyle = mg; ctx.fillRect(560, 60, W - 560, H - 120);
+    drawNetwork(ctx, 940, 330, 168);
+  }
+
   // gold frame
   ctx.strokeStyle = 'rgba(236,210,138,0.45)'; ctx.lineWidth = 1.5;
   roundRect(ctx, 24, 24, W - 48, H - 48, 22); ctx.stroke();
 
   const M = 72;
+  const textMaxW = spec.poster ? 560 : W - M * 2; // leave room for the motif on posters
 
   // header
   ctx.textBaseline = 'alphabetic';
@@ -78,10 +113,11 @@ export function drawCard(canvas: HTMLCanvasElement, spec: ShareSpec) {
   ctx.textAlign = 'left';
 
   // title
-  const titleSize = fitFont(ctx, spec.title, '"Rajdhani", sans-serif', '600', 62, W - M * 2 - (spec.accentWord ? 0 : 0));
+  const fullTitle = spec.accentWord ? `${spec.title} ${spec.accentWord}` : spec.title;
+  const titleSize = fitFont(ctx, fullTitle, '"Rajdhani", sans-serif', '600', spec.poster ? 78 : 62, textMaxW);
   ctx.font = `600 ${titleSize}px "Rajdhani", sans-serif`;
   ctx.fillStyle = PAL.text;
-  const titleY = 190;
+  const titleY = spec.poster ? 210 : 190;
   ctx.fillText(spec.title, M, titleY);
   if (spec.accentWord) {
     const tw = ctx.measureText(spec.title).width;
@@ -110,17 +146,18 @@ export function drawCard(canvas: HTMLCanvasElement, spec: ShareSpec) {
     });
   }
 
-  // detail — sits under the stats when present, or fills the open space (larger) when not
+  // detail — under stats when present; larger and left-constrained on posters
   if (spec.detail) {
     const hasStats = stats.length > 0;
-    const size = hasStats ? 22 : 30;
-    const lh = hasStats ? 30 : 44;
+    const size = hasStats ? 22 : spec.poster ? 26 : 30;
+    const lh = hasStats ? 30 : spec.poster ? 38 : 44;
     ctx.font = `400 ${size}px "Archivo", sans-serif`; ctx.fillStyle = hasStats ? PAL.mist : PAL.text;
+    const wrapW = spec.poster ? textMaxW : contentW;
     const words = spec.detail.split(' ');
-    let line = '', y = hasStats ? 468 : 300;
+    let line = '', y = hasStats ? 468 : spec.poster ? 300 : 300;
     const maxY = 520;
     for (const w of words) {
-      if (ctx.measureText(line + w + ' ').width > contentW) { ctx.fillText(line.trim(), M, y); line = w + ' '; y += lh; if (y > maxY) break; }
+      if (ctx.measureText(line + w + ' ').width > wrapW) { ctx.fillText(line.trim(), M, y); line = w + ' '; y += lh; if (y > maxY) break; }
       else line += w + ' ';
     }
     if (line.trim() && y <= maxY) ctx.fillText(line.trim(), M, y);
