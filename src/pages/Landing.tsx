@@ -20,8 +20,8 @@ export function Landing() {
       {/* HERO — immersive atlas: black hole singularity + orbiting nodes */}
       <section style={{ position: 'relative', minHeight: 'calc(100vh - 8rem)', overflow: 'hidden' }}>
         <AtlasHero className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
-        {/* left scrim keeps the hero copy readable over the scene */}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(13,19,16,0.92) 0%, rgba(13,19,16,0.6) 30%, transparent 58%)', pointerEvents: 'none' }} />
+        {/* left scrim keeps the hero copy crisp over the scene */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(11,16,13,0.96) 0%, rgba(11,16,13,0.82) 26%, rgba(11,16,13,0.4) 46%, transparent 64%)', pointerEvents: 'none' }} />
 
         <motion.div className="relative flex flex-col justify-center" style={{ minHeight: 'calc(100vh - 8rem)', maxWidth: 420, padding: '0 24px 0 clamp(24px, 5vw, 64px)', pointerEvents: 'none' }}
           initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.09, delayChildren: 0.25 } } }}>
@@ -34,12 +34,12 @@ export function Landing() {
             <Wordmark style={{ fontSize: 'clamp(2.7rem, 6.2vw, 4.8rem)', letterSpacing: '0.02em', lineHeight: 1 }} />
           </motion.div>
 
-          <motion.p variants={heroItem} className="font-display" style={{ marginTop: 20, fontSize: 'clamp(1rem,1.9vw,1.25rem)', lineHeight: 1.4, color: 'var(--text)', fontWeight: 300 }}>
+          <motion.p variants={heroItem} className="font-display" style={{ marginTop: 20, fontSize: 'clamp(1.15rem,2.1vw,1.5rem)', lineHeight: 1.32, letterSpacing: '-0.01em', color: 'var(--text-hi)', fontWeight: 400 }}>
             Explore how strategies become{' '}
-            <em style={{ fontStyle: 'italic', color: 'var(--primary)', fontWeight: 400, textShadow: '0 0 20px rgba(228,200,119,0.25)' }}>markets.</em>
+            <em style={{ fontStyle: 'italic', color: 'var(--primary)', fontWeight: 500, textShadow: '0 0 24px rgba(228,200,119,0.35)' }}>markets.</em>
           </motion.p>
 
-          <motion.p variants={heroItem} className="font-display" style={{ marginTop: 16, fontSize: 13, lineHeight: 1.7, color: 'var(--mist)', maxWidth: 320, opacity: 0.85 }}>
+          <motion.p variants={heroItem} className="font-display" style={{ marginTop: 16, fontSize: 13.5, lineHeight: 1.72, color: 'var(--text)', maxWidth: 330 }}>
             An interactive atlas of the Prosper ecosystem — orbit the core, then open any node to go deeper.
           </motion.p>
 

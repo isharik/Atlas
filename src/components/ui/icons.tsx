@@ -6,51 +6,90 @@ const S = ({ children, size = 18 }: { children: React.ReactNode; size?: number }
   </svg>
 );
 
+/**
+ * Zone emblems — crafted duotone medallions rather than flat outlines. Each layers a
+ * translucent fill (currentColor) under crisp strokes and a bright accent detail, so the
+ * mark reads with depth and mint even at ~15px. Colour comes from the node (currentColor).
+ */
 export function ZoneGlyph({ icon, size = 18 }: { icon: ZoneIcon; size?: number }) {
+  const P = {
+    width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
+    stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round', strokeLinejoin: 'round',
+  } as const;
   switch (icon) {
+    // Curator — an engraved profile medallion: framing ring, shoulders, poised head.
     case 'curator':
       return (
-        <S size={size}>
-          <circle cx="12" cy="8" r="3.2" />
-          <path d="M5.5 19a6.5 6.5 0 0 1 13 0" />
-        </S>
+        <svg {...P}>
+          <circle cx="12" cy="12" r="9.4" strokeWidth="0.85" opacity="0.28" />
+          <path d="M5.7 18.6a6.4 6.4 0 0 1 12.6 0" fill="currentColor" fillOpacity="0.14" />
+          <path d="M5.7 18.6a6.4 6.4 0 0 1 12.6 0" />
+          <circle cx="12" cy="8.6" r="3.1" fill="currentColor" fillOpacity="0.2" />
+          <circle cx="12" cy="8.6" r="3.1" />
+        </svg>
       );
+    // Strategy — an ascent: a faceted peak with strata and a summit ridge (a thesis climbing).
     case 'strategy':
       return (
-        <S size={size}>
-          <path d="M12 4 20 19 4 19 Z" />
-        </S>
+        <svg {...P}>
+          <path d="M12 3.4 20.4 19.6 3.6 19.6 Z" fill="currentColor" fillOpacity="0.12" />
+          <path d="M12 3.4 20.4 19.6 3.6 19.6 Z" />
+          <path d="M12 3.4 12 19.6" opacity="0.45" strokeWidth="1" />
+          <path d="M12 11.4 16.2 19.6 M12 11.4 7.8 19.6" opacity="0.3" strokeWidth="1" />
+          <path d="M9.2 15.4 14.8 15.4" opacity="0.4" strokeWidth="1" />
+        </svg>
       );
+    // Vault — a real safe: framed door, combination dial with pointer, top bolts.
     case 'vault':
       return (
-        <S size={size}>
-          <path d="M12 3 20 7.5 20 16.5 12 21 4 16.5 4 7.5 Z" />
-          <path d="M12 3 12 12 20 7.5 M12 12 4 7.5 M12 12 12 21" opacity="0.6" />
-        </S>
+        <svg {...P}>
+          <rect x="3.6" y="4.6" width="16.8" height="14.8" rx="2.2" fill="currentColor" fillOpacity="0.1" />
+          <rect x="3.6" y="4.6" width="16.8" height="14.8" rx="2.2" />
+          <rect x="6.2" y="7.2" width="11.6" height="9.6" rx="1.3" opacity="0.5" strokeWidth="1" />
+          <circle cx="12" cy="12" r="2.7" />
+          <path d="M12 9.5v2.5l1.9 1.1" strokeWidth="1.1" />
+          <path d="M9.4 5.7V4.4 M14.6 5.7V4.4" opacity="0.55" strokeWidth="1" />
+        </svg>
       );
+    // Track record — a verifiable record: concentric grooves with a progress tick.
     case 'track':
       return (
-        <S size={size}>
-          <circle cx="12" cy="12" r="8" />
-          <circle cx="12" cy="12" r="3.6" />
-          <circle cx="12" cy="12" r="0.6" fill="currentColor" />
-        </S>
+        <svg {...P}>
+          <circle cx="12" cy="12" r="9" fill="currentColor" fillOpacity="0.08" />
+          <circle cx="12" cy="12" r="9" />
+          <circle cx="12" cy="12" r="5.9" opacity="0.42" strokeWidth="1" />
+          <circle cx="12" cy="12" r="2.9" opacity="0.6" strokeWidth="1" />
+          <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+          <path d="M12 3 12 5.6" strokeWidth="1.3" />
+        </svg>
       );
+    // p{VAULT} — a struck coin: faceted rhombus with mint facets and a set stone.
     case 'pvault':
       return (
-        <S size={size}>
-          <path d="M12 3 20 12 12 21 4 12 Z" />
-          <path d="M12 8.5 15.5 12 12 15.5 8.5 12 Z" opacity="0.6" />
-        </S>
+        <svg {...P}>
+          <path d="M12 2.6 21.4 12 12 21.4 2.6 12 Z" fill="currentColor" fillOpacity="0.12" />
+          <path d="M12 2.6 21.4 12 12 21.4 2.6 12 Z" />
+          <path d="M12 7 17 12 12 17 7 12 Z" opacity="0.55" strokeWidth="1" />
+          <path d="M12 2.6 12 7 M12 17 12 21.4 M2.6 12 7 12 M17 12 21.4 12" opacity="0.32" strokeWidth="1" />
+          <circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none" />
+        </svg>
       );
+    // Performance market — a live market: candlesticks with wicks over a trend line.
     case 'market':
       return (
-        <S size={size}>
-          <path d="M4 20 20 20" />
-          <rect x="5.5" y="12" width="3" height="6" rx="0.6" />
-          <rect x="10.5" y="8" width="3" height="10" rx="0.6" />
-          <rect x="15.5" y="4.5" width="3" height="13.5" rx="0.6" />
-        </S>
+        <svg {...P}>
+          <path d="M3.6 20.4 20.4 20.4" opacity="0.35" strokeWidth="1" />
+          <path d="M7 8.6 7 16.4" strokeWidth="1" />
+          <rect x="5.7" y="10.4" width="2.6" height="4" rx="0.5" fill="currentColor" fillOpacity="0.16" />
+          <rect x="5.7" y="10.4" width="2.6" height="4" rx="0.5" strokeWidth="1.1" />
+          <path d="M12 5.6 12 15" strokeWidth="1" />
+          <rect x="10.7" y="7.6" width="2.6" height="5" rx="0.5" fill="currentColor" fillOpacity="0.16" />
+          <rect x="10.7" y="7.6" width="2.6" height="5" rx="0.5" strokeWidth="1.1" />
+          <path d="M17 4.2 17 13" strokeWidth="1" />
+          <rect x="15.7" y="6" width="2.6" height="4.6" rx="0.5" fill="currentColor" fillOpacity="0.16" />
+          <rect x="15.7" y="6" width="2.6" height="4.6" rx="0.5" strokeWidth="1.1" />
+          <path d="M5.6 15.2 10 11.4 14.6 12.4 19 6.8" strokeWidth="1.2" opacity="0.7" />
+        </svg>
       );
   }
 }

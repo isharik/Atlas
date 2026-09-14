@@ -15,8 +15,8 @@ const GOLD_DEEP = new THREE.Color('#9a7a34');
 const EMERALD = new THREE.Color('#2fbf8f');
 const EMERALD_GLOW = new THREE.Color('#38e0a0');
 const CENTER = new THREE.Vector3(0, 0, 0);
-const ATLAS_OFFSET: [number, number, number] = [3.9, 0, 0]; // shifts the whole model right, clear of the hero copy
-const ORBIT_TARGET: [number, number, number] = [3.9, 0.4, 0];
+const ATLAS_OFFSET: [number, number, number] = [4.3, 0, 0]; // model centre — sits right of the pivot so the copy has room at left
+const ORBIT_TARGET: [number, number, number] = [3.1, 0.7, 0]; // orbit/zoom pivot, kept inside the model's footprint
 const RING = 5.2;
 
 const prefersReduced = () =>
@@ -290,8 +290,8 @@ function Scene({ onOpen }: { onOpen: (id: ZoneId) => void }) {
   const spin = useRef<THREE.Group>(null!);
   const interacting = useRef(false);
   useFrame((_state, dt) => {
-    // model breathes with a slow auto-spin, paused while the user is dragging (interruptible)
-    if (spin.current && !interacting.current && !prefersReduced()) spin.current.rotation.y += Math.min(dt, 0.05) * 0.07;
+    // model breathes with a steady auto-spin, paused while the user is dragging (interruptible)
+    if (spin.current && !interacting.current && !prefersReduced()) spin.current.rotation.y += Math.min(dt, 0.05) * 0.12;
   });
   return (
     <group>
@@ -348,8 +348,8 @@ export function AtlasHero({ className, style }: { className?: string; style?: Re
   }, []);
 
   return (
-    <div ref={wrapRef} className={className} style={{ position: 'relative', WebkitMaskImage: mask, maskImage: mask, ...style }}>
-      <Canvas frameloop={active ? 'always' : 'never'} dpr={[1, 1.4]} gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 40, near: 0.1, far: 120, position: [3.0, 5.2, 14.5] }}>
+    <div ref={wrapRef} className={className} style={{ WebkitMaskImage: mask, maskImage: mask, ...style }}>
+      <Canvas frameloop={active ? 'always' : 'never'} dpr={[1, 1.4]} gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 42, near: 0.1, far: 120, position: [3.1, 4.1, 14.2] }}>
         <FitParent />
         <Suspense fallback={null}>
           <Scene onOpen={open} />
