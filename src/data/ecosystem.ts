@@ -275,6 +275,16 @@ export const FAQS: Faq[] = [
     to: '/zone/pvault',
   },
   {
+    q: 'What is the Early Depositor Reward?',
+    a: 'Deposit into a Vault within its Reward Cap during the first 14 days and you qualify for a share of that Vault’s Launch Reward — 6% of the Vault’s p{VAULT} supply. Deposits beyond the cap or window still receive Vault Tokens, but are waitlisted for the reward.',
+    to: '/preview',
+  },
+  {
+    q: 'Where does a p{VAULT} trade after the bonding curve?',
+    a: 'Each p{VAULT} opens “On Curve” (on its internal bonding curve). Once established it graduates to FaroSwap, the native AMM/PMM DEX in the Pharos ecosystem, where it trades openly.',
+    to: '/zone/pvault',
+  },
+  {
     q: 'How do I become a Curator?',
     a: 'Prosper opened a Founding Curator Cohort with a $50K Seed Fund to onboard the first Curators. You can apply to become a Curator via the official form, and join the community on X.',
     to: '/participate',
@@ -449,7 +459,7 @@ export const ZONE_DETAIL: Record<ZoneId, ZoneDetail> = {
     points: [
       'Without p{VAULT}: a new strategy faces a cold start — no record, no attention, no capital',
       'With p{VAULT}: price discovery from day one, independent of Vault Shares',
-      'Opens on an internal bonding curve, then graduates to open DEX trading',
+      'Opens on an internal bonding curve, then graduates to FaroSwap — Pharos’s native AMM/PMM DEX',
       'Performance fees buy the paired p{VAULT} on the open market — verified performance becomes real demand',
       'It is NOT the same as Vault Shares — different purpose entirely',
     ],
