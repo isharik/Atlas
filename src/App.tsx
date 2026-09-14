@@ -16,6 +16,7 @@ import { CuratorStudio } from './pages/CuratorStudio';
 import { Tracker } from './pages/Tracker';
 import { Pulse } from './pages/Pulse';
 import { CreatePost } from './pages/CreatePost';
+import { PostStudioTopic } from './pages/PostStudioTopic';
 import { Preview } from './pages/Preview';
 import { ProfessorOcto } from './pages/ProfessorOcto';
 
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="/tracker" element={wrap(<Tracker />)} />
         <Route path="/pulse" element={wrap(<Pulse />)} />
         <Route path="/create" element={wrap(<CreatePost />)} />
+        <Route path="/create/:id" element={wrap(<PostStudioTopic />)} />
         <Route path="/preview" element={wrap(<Preview />)} />
         <Route path="/octo" element={wrap(<ProfessorOcto />)} />
         <Route path="/pharos" element={wrap(<Pharos />)} />
