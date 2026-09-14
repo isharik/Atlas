@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Html, OrbitControls } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
@@ -15,8 +15,8 @@ const GOLD_DEEP = new THREE.Color('#9a7a34');
 const EMERALD = new THREE.Color('#2fbf8f');
 const EMERALD_GLOW = new THREE.Color('#38e0a0');
 const CENTER = new THREE.Vector3(0, 0, 0);
-const ATLAS_OFFSET: [number, number, number] = [4.3, 0, 0]; // model centre — sits right of the pivot so the copy has room at left
-const ORBIT_TARGET: [number, number, number] = [3.1, 0.7, 0]; // orbit/zoom pivot, kept inside the model's footprint
+const ATLAS_OFFSET: [number, number, number] = [4.8, 0, 0]; // model centre — sits right of the camera axis, giving the copy room at left
+const CAM_LOOK = new THREE.Vector3(3.3, 0.3, 0); // fixed look point (left of the model, so the orbital reads on the right)
 const RING = 5.2;
 
 const prefersReduced = () =>
@@ -288,32 +288,16 @@ function AtlasNode({ zone, angle, onOpen }: { zone: ZoneMeta; angle: number; onO
 
 function Scene({ onOpen }: { onOpen: (id: ZoneId) => void }) {
   const spin = useRef<THREE.Group>(null!);
-  const interacting = useRef(false);
-  useFrame((_state, dt) => {
-    // model breathes with a steady auto-spin, paused while the user is dragging (interruptible)
-    if (spin.current && !interacting.current && !prefersReduced()) spin.current.rotation.y += Math.min(dt, 0.05) * 0.12;
+  useFrame((state, dt) => {
+    // camera is fixed — just aim it once and keep the model steadily auto-spinning
+    state.camera.lookAt(CAM_LOOK);
+    if (spin.current && !prefersReduced()) spin.current.rotation.y += Math.min(dt, 0.05) * 0.12;
   });
   return (
     <group>
       <ambientLight intensity={0.28} color={EMERALD} />
       <directionalLight position={[6, 10, 6]} intensity={1.05} color={GOLD} />
       <directionalLight position={[-6, 4, -4]} intensity={0.45} color={EMERALD} />
-      <OrbitControls
-        makeDefault
-        target={ORBIT_TARGET}
-        enablePan={false}
-        enableZoom
-        minDistance={7}
-        maxDistance={24}
-        enableDamping
-        dampingFactor={0.08}
-        rotateSpeed={0.5}
-        zoomSpeed={0.7}
-        minPolarAngle={0.18}
-        maxPolarAngle={Math.PI * 0.52}
-        onStart={() => { interacting.current = true; }}
-        onEnd={() => { interacting.current = false; }}
-      />
       <group position={ATLAS_OFFSET}>
         <group ref={spin}>
           <Core />
@@ -349,7 +333,7 @@ export function AtlasHero({ className, style }: { className?: string; style?: Re
 
   return (
     <div ref={wrapRef} className={className} style={{ WebkitMaskImage: mask, maskImage: mask, ...style }}>
-      <Canvas frameloop={active ? 'always' : 'never'} dpr={[1, 1.4]} gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 42, near: 0.1, far: 120, position: [3.1, 4.1, 14.2] }}>
+      <Canvas frameloop={active ? 'always' : 'never'} dpr={[1, 1.4]} gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 42, near: 0.1, far: 120, position: [3.3, 10.2, 11] }}>
         <FitParent />
         <Suspense fallback={null}>
           <Scene onOpen={open} />
@@ -358,17 +342,6 @@ export function AtlasHero({ className, style }: { className?: string; style?: Re
           <Bloom intensity={0.62} luminanceThreshold={0.5} luminanceSmoothing={0.9} mipmapBlur />
         </EffectComposer>
       </Canvas>
-      {/* discoverability: the model is now orbit + zoom interactive */}
-      <div aria-hidden className="font-mono" style={{
-        position: 'absolute', right: 18, bottom: 16, display: 'inline-flex', alignItems: 'center', gap: 7,
-        fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(195,207,199,0.6)',
-        border: '1px solid var(--border)', borderRadius: 999, padding: '5px 11px',
-        background: 'rgba(12,18,15,0.42)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-        pointerEvents: 'none', userSelect: 'none',
-      }}>
-        <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--emerald-glow)' }} />
-        Drag to orbit · scroll to zoom
-      </div>
     </div>
   );
 }
