@@ -231,8 +231,8 @@ export const PROGRAMS: Program[] = [
 export const PARTNERS = [
   { name: 'Pharos', handle: '@pharos_network', role: 'Scalable RealFi Layer-1 infrastructure' },
   { name: 'R25 Protocol', handle: '@R25Official', role: 'Dedicated vault mechanics, where applicable' },
+  { name: 'TopNod Wallet', handle: '@Top_nod', role: 'Official self-custodial wallet partner' },
   { name: 'Stove Finance', handle: '', role: 'First-generation ecosystem partner' },
-  { name: 'TopNod Wallet', handle: '', role: 'First-generation ecosystem partner' },
 ] as const;
 
 /** Real FAQ — every answer is grounded in pros-per.xyz + @ProsperTicker. */

@@ -57,21 +57,32 @@ function FitParent() {
  * back to centre and clamped to the shell so the energy stays contained. Teal primary, a little
  * gold, a dark nucleus for depth. Small (~15% of the orbit) — an anchor, not the star.
  */
-const CORE_R = 1.05;   // shell radius
-const CORE_RMAX = 0.92; // particle containment radius
-const CORE_N = 160;
+const CORE_R = 0.9;     // shell radius — smaller
+const CORE_RMAX = 0.78; // particle containment radius
+const CORE_N = 120;
+const P_WHITE = new THREE.Color('#eef4ff');
+const P_BLUE = new THREE.Color('#6fa0ff');
+/** Soft round sprite so points read as tidy pebbles, not squares. */
+function pebbleTexture() {
+  const s = 64, cvs = document.createElement('canvas'); cvs.width = cvs.height = s;
+  const ctx = cvs.getContext('2d')!;
+  const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.45, 'rgba(255,255,255,0.9)'); g.addColorStop(0.75, 'rgba(255,255,255,0.35)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, s, s);
+  const t = new THREE.CanvasTexture(cvs); t.needsUpdate = true; return t;
+}
 function Core() {
   const shell = useRef<THREE.Group>(null!);
-  const cloud = useRef<THREE.Points>(null!);
+  const sprite = useMemo(() => pebbleTexture(), []);
   const sim = useMemo(() => {
     const pos = new Float32Array(CORE_N * 3), vel = new Float32Array(CORE_N * 3), col = new Float32Array(CORE_N * 3);
     const c = new THREE.Color();
     for (let i = 0; i < CORE_N; i++) {
       const r = CORE_RMAX * Math.cbrt(Math.random()), th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
       pos[i * 3] = r * Math.sin(ph) * Math.cos(th); pos[i * 3 + 1] = r * Math.cos(ph); pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
-      vel[i * 3] = (Math.random() - 0.5) * 0.4; vel[i * 3 + 1] = (Math.random() - 0.5) * 0.4; vel[i * 3 + 2] = (Math.random() - 0.5) * 0.4;
-      if (Math.random() < 0.12) c.copy(GOLD_WARM); else c.copy(Math.random() < 0.4 ? TEAL_LT : TEAL);
-      const m = 0.5 + Math.random() * 0.5;
+      vel[i * 3] = (Math.random() - 0.5) * 1.2; vel[i * 3 + 1] = (Math.random() - 0.5) * 1.2; vel[i * 3 + 2] = (Math.random() - 0.5) * 1.2;
+      c.copy(Math.random() < 0.6 ? P_WHITE : P_BLUE);
+      const m = 0.78 + Math.random() * 0.22; // bright, so pebbles read clearly
       col[i * 3] = c.r * m; col[i * 3 + 1] = c.g * m; col[i * 3 + 2] = c.b * m;
     }
     return { pos, vel, col };
@@ -80,32 +91,28 @@ function Core() {
   const shellGeo = useMemo(() => new THREE.IcosahedronGeometry(CORE_R, 1), []);
   const shellEdges = useMemo(() => new THREE.EdgesGeometry(shellGeo), [shellGeo]);
   useFrame((_state, dt) => {
-    const d = Math.min(dt, 0.05), reduce = prefersReduced();
-    if (shell.current && !reduce) { shell.current.rotation.y += d * 0.12; shell.current.rotation.x += d * 0.05; }
-    if (cloud.current && !reduce) {
-      const { pos, vel } = sim, A = 3.6; // agitation strength
-      for (let i = 0; i < CORE_N; i++) {
-        const x = i * 3, y = x + 1, z = x + 2;
-        vel[x] += (Math.random() - 0.5) * A * d; vel[y] += (Math.random() - 0.5) * A * d; vel[z] += (Math.random() - 0.5) * A * d; // turbulent kicks
-        vel[x] -= pos[x] * 1.3 * d; vel[y] -= pos[y] * 1.3 * d; vel[z] -= pos[z] * 1.3 * d;                                       // pull to centre
-        vel[x] *= 0.92; vel[y] *= 0.92; vel[z] *= 0.92;                                                                          // damping
-        pos[x] += vel[x] * d; pos[y] += vel[y] * d; pos[z] += vel[z] * d;
-        const len = Math.hypot(pos[x], pos[y], pos[z]);
-        if (len > CORE_RMAX) { const s = CORE_RMAX / len; pos[x] *= s; pos[y] *= s; pos[z] *= s; vel[x] *= -0.4; vel[y] *= -0.4; vel[z] *= -0.4; } // bounce off shell
-      }
-      geo.attributes.position.needsUpdate = true;
+    const d = Math.min(dt, 0.05);
+    if (shell.current) { shell.current.rotation.y += d * 0.16; shell.current.rotation.x += d * 0.06; }
+    // the cloud churns — lively but tidy turbulence contained inside the shell
+    const { pos, vel } = sim, A = 6.0;
+    for (let i = 0; i < CORE_N; i++) {
+      const x = i * 3, y = x + 1, z = x + 2;
+      vel[x] += (Math.random() - 0.5) * A * d; vel[y] += (Math.random() - 0.5) * A * d; vel[z] += (Math.random() - 0.5) * A * d; // turbulent kicks
+      vel[x] -= pos[x] * 2.2 * d; vel[y] -= pos[y] * 2.2 * d; vel[z] -= pos[z] * 2.2 * d;                                       // pull to centre
+      vel[x] *= 0.9; vel[y] *= 0.9; vel[z] *= 0.9;                                                                             // damping
+      pos[x] += vel[x] * d; pos[y] += vel[y] * d; pos[z] += vel[z] * d;
+      const len = Math.hypot(pos[x], pos[y], pos[z]);
+      if (len > CORE_RMAX) { const s = CORE_RMAX / len; pos[x] *= s; pos[y] *= s; pos[z] *= s; vel[x] *= -0.5; vel[y] *= -0.5; vel[z] *= -0.5; } // bounce off shell
     }
+    geo.attributes.position.needsUpdate = true;
   });
   return (
     <group position={CENTER}>
-      {/* dark nucleus for depth */}
-      <mesh><sphereGeometry args={[0.32, 32, 32]} /><meshBasicMaterial color={HORIZON} transparent opacity={0.85} depthWrite={false} /></mesh>
-      {/* agitated particle cloud */}
-      <points ref={cloud} geometry={geo}><pointsMaterial size={0.05} vertexColors transparent opacity={0.95} sizeAttenuation depthWrite={false} blending={THREE.AdditiveBlending} /></points>
-      {/* mesh-ball shell — geodesic wireframe + a whisper-thin skin */}
+      {/* tidy white/blue pebbles — the energy inside */}
+      <points geometry={geo}><pointsMaterial map={sprite} size={0.075} vertexColors transparent opacity={1} sizeAttenuation depthWrite={false} alphaTest={0.02} /></points>
+      {/* transparent geodesic mesh-ball shell — no skin, no dark core */}
       <group ref={shell}>
-        <lineSegments geometry={shellEdges}><lineBasicMaterial color={TEAL} transparent opacity={0.34} depthWrite={false} blending={THREE.AdditiveBlending} /></lineSegments>
-        <mesh geometry={shellGeo}><meshBasicMaterial color={TEAL} transparent opacity={0.04} side={THREE.DoubleSide} depthWrite={false} blending={THREE.AdditiveBlending} /></mesh>
+        <lineSegments geometry={shellEdges}><lineBasicMaterial color={TEAL} transparent opacity={0.24} depthWrite={false} blending={THREE.AdditiveBlending} /></lineSegments>
       </group>
     </group>
   );

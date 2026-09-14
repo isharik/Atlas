@@ -23,10 +23,13 @@ export interface DetailProps {
   secondary?: { label: string; to: string };
   prev?: DetailNav;
   next?: DetailNav;
+  siblings?: DetailNav[];
+  currentTo?: string;
   backTo: string;
   backLabel: string;
   accent?: string;
   glyph?: ReactNode;
+  extra?: ReactNode;
 }
 
 export function DetailScaffold(p: DetailProps) {
@@ -51,6 +54,18 @@ export function DetailScaffold(p: DetailProps) {
         <motion.button onClick={() => navigate(p.backTo)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pressable detail-back font-mono">
           <span style={{ transform: 'scaleX(-1)', display: 'inline-flex' }}><IconArrow size={13} /></span> {p.backLabel}
         </motion.button>
+
+        {/* navigator — jump straight between siblings, no card grid */}
+        {p.siblings && p.siblings.length > 1 && (
+          <div className="detail-tabs" role="tablist" aria-label="Browse">
+            {p.siblings.map((s) => (
+              <button key={s.to} role="tab" aria-selected={s.to === p.currentTo} onClick={() => navigate(s.to)}
+                className="pressable detail-tab" data-on={s.to === p.currentTo ? 'true' : 'false'}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <motion.div initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.07, delayChildren: 0.04 } } }} style={{ marginTop: 20, position: 'relative' }}>
           {p.glyph && <div aria-hidden className="detail-glyph" style={{ color: accent }}>{p.glyph}</div>}
@@ -109,6 +124,8 @@ export function DetailScaffold(p: DetailProps) {
             </button>
           ) : <span />}
         </div>
+
+        {p.extra}
 
         {/* branding — a slight, tasteful touch at the foot of every detail page */}
         <div className="detail-brand">

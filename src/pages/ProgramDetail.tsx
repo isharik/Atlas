@@ -3,6 +3,7 @@ import { PROGRAMS } from '@/data/ecosystem';
 import { slugify } from '@/lib/slug';
 import { DetailScaffold } from '@/components/DetailScaffold';
 import { StepGlyphFallback } from '@/components/ui/programGlyphs';
+import { PartnersStrip } from '@/components/PartnersStrip';
 
 // Full, grounded write-ups for each announced program (source: pros-per.xyz + @ProsperTicker).
 const CONTENT: Record<string, { long: string[]; points: { k: string; v: string }[] }> = {
@@ -68,11 +69,13 @@ export function ProgramDetail() {
       points={c.points}
       glyph={<StepGlyphFallback name={p.name} size={150} />}
       cta={p.href ? { label: p.hrefLabel ?? 'Learn more', href: p.href } : undefined}
-      secondary={{ label: 'All programs', to: '/programs' }}
+      siblings={PROGRAMS.map((x) => ({ to: `/programs/${slugify(x.name)}`, label: x.name }))}
+      currentTo={`/programs/${slugify(p.name)}`}
       prev={{ to: `/programs/${slugify(prev.name)}`, label: prev.name }}
       next={{ to: `/programs/${slugify(next.name)}`, label: next.name }}
-      backTo="/programs"
-      backLabel="All programs"
+      backTo="/"
+      backLabel="Home"
+      extra={<PartnersStrip />}
     />
   );
 }

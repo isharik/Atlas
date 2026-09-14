@@ -48,8 +48,8 @@ const CONTENT: Record<string, { long: string[]; points: { k: string; v: string }
   traders: {
     long: [
       'Traders price conviction. Every Vault has a p{VAULT} — an independent market on the Curator and their strategy — that you can buy and trade as reputation and momentum shift.',
-      'A p{VAULT} opens on a bonding curve and, once it graduates, trades on FaroSwap, Pharos’s native DEX. It’s the layer where the market’s belief in a strategy gets a live, tradable price.',
-      'Backed by transparent on-chain performance, it turns "is this Curator good?" into a market you can actually take a position in. This surface opens with launch.',
+      'A p{VAULT} opens on an internal bonding curve and, once it graduates, trades on FaroSwap — Pharos’s native AMM/PMM DEX. It is the layer where the market’s belief in a strategy gets a live, tradable price.',
+      'Backed by transparent on-chain performance, it turns a Curator’s reputation into a market you can take a position in. This surface opens with launch.',
     ],
     points: [
       { k: 'Status', v: 'Coming soon' },
@@ -83,10 +83,12 @@ export function ParticipateDetail() {
       glyph={<StepGlyphFallback name={r.id} size={150} />}
       cta={r.cta ? { label: r.cta.label, href: r.cta.href } : undefined}
       secondary={c.secondary}
+      siblings={ROLES.map((x) => ({ to: `/participate/${x.id}`, label: x.audience }))}
+      currentTo={`/participate/${r.id}`}
       prev={{ to: `/participate/${prev.id}`, label: prev.audience }}
       next={{ to: `/participate/${next.id}`, label: next.audience }}
-      backTo="/participate"
-      backLabel="All ways to participate"
+      backTo="/"
+      backLabel="Home"
     />
   );
 }
