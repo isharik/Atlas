@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { Html, OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
@@ -16,7 +16,11 @@ const EMERALD = new THREE.Color('#2fbf8f');
 const EMERALD_GLOW = new THREE.Color('#38e0a0');
 const CENTER = new THREE.Vector3(0, 0, 0);
 const ATLAS_OFFSET: [number, number, number] = [3.9, 0, 0]; // shifts the whole model right, clear of the hero copy
+const ORBIT_TARGET: [number, number, number] = [3.9, 0.4, 0];
 const RING = 5.2;
+
+const prefersReduced = () =>
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function FitParent() {
   const gl = useThree((s) => s.gl);
@@ -43,53 +47,74 @@ function FitParent() {
 }
 
 /**
- * The Prosper core — a small wireframe "matrix" globe: points on a sphere joined by
- * thin teal lines, slowly rotating on its own. Lightweight and open — a visual anchor,
- * never a solid object. A faint radial glow seats it in the dark.
+ * The Prosper core — a solid, faceted value-core caught inside a slow wireframe shell.
+ * Reads as a real 3D object with depth: a glowing gold heart, a counter-rotating emerald
+ * lattice around it, a tilted gold meridian ring, and a scatter of light points. A visual
+ * anchor with mass, not a flat diagram.
  */
 function Core() {
-  const globe = useRef<THREE.Group>(null!);
-  const GR = 1.25; // globe radius
+  const heart = useRef<THREE.Mesh>(null!);
+  const shell = useRef<THREE.Group>(null!);
+  const meridian = useRef<THREE.Group>(null!);
 
-  const { pointPos, linePos } = useMemo(() => {
-    const N = 54;
-    const pts: THREE.Vector3[] = [];
+  const pointPos = useMemo(() => {
+    const N = 46;
     const gAng = Math.PI * (3 - Math.sqrt(5));
+    const arr = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) {
       const y = 1 - (i / (N - 1)) * 2;
       const r = Math.sqrt(1 - y * y);
       const th = gAng * i;
-      pts.push(new THREE.Vector3(Math.cos(th) * r * GR, y * GR, Math.sin(th) * r * GR));
+      const R = 1.5;
+      arr[i * 3] = Math.cos(th) * r * R;
+      arr[i * 3 + 1] = y * R;
+      arr[i * 3 + 2] = Math.sin(th) * r * R;
     }
-    const pointPos = new Float32Array(N * 3);
-    pts.forEach((p, i) => { pointPos[i * 3] = p.x; pointPos[i * 3 + 1] = p.y; pointPos[i * 3 + 2] = p.z; });
-    const segs: number[] = [];
-    const thr = (0.62 * GR) ** 2;
-    for (let i = 0; i < pts.length; i++)
-      for (let j = i + 1; j < pts.length; j++)
-        if (pts[i].distanceToSquared(pts[j]) < thr) segs.push(pts[i].x, pts[i].y, pts[i].z, pts[j].x, pts[j].y, pts[j].z);
-    return { pointPos, linePos: new Float32Array(segs) };
+    return arr;
   }, []);
 
-  useFrame((_state, dt) => {
-    const d = Math.min(dt, 0.05); // clamp so a paused→resumed frame doesn't jump
-    if (globe.current) { globe.current.rotation.y += d * 0.16; globe.current.rotation.x = 0.32; } // always looping
+  const shellEdges = useMemo(() => new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.5, 1)), []);
+
+  useFrame((state, dt) => {
+    const d = Math.min(dt, 0.05);
+    const reduce = prefersReduced();
+    if (heart.current) {
+      const s = reduce ? 1 : 1 + Math.sin(state.clock.elapsedTime * 1.1) * 0.035; // gentle breathing
+      heart.current.scale.setScalar(s);
+      if (!reduce) heart.current.rotation.y += d * 0.28;
+    }
+    if (shell.current && !reduce) { shell.current.rotation.y -= d * 0.12; shell.current.rotation.x = 0.3; }
+    if (meridian.current && !reduce) meridian.current.rotation.z += d * 0.2;
   });
 
   return (
     <group position={CENTER}>
-      <group ref={globe}>
-        <lineSegments>
-          <bufferGeometry><bufferAttribute attach="attributes-position" args={[linePos, 3]} count={linePos.length / 3} /></bufferGeometry>
-          <lineBasicMaterial color={EMERALD_GLOW} transparent opacity={0.42} depthWrite={false} blending={THREE.AdditiveBlending} />
+      {/* glowing faceted heart */}
+      <mesh ref={heart}>
+        <icosahedronGeometry args={[0.6, 0]} />
+        <meshStandardMaterial color={GOLD} emissive={GOLD} emissiveIntensity={0.55} metalness={0.9} roughness={0.25} flatShading />
+      </mesh>
+      {/* inner glass halo around the heart */}
+      <mesh>
+        <icosahedronGeometry args={[0.9, 0]} />
+        <meshStandardMaterial color={EMERALD_GLOW} emissive={EMERALD} emissiveIntensity={0.3} metalness={0.2} roughness={0.1} transparent opacity={0.12} depthWrite={false} flatShading />
+      </mesh>
+      {/* counter-rotating wireframe lattice shell */}
+      <group ref={shell}>
+        <lineSegments geometry={shellEdges}>
+          <lineBasicMaterial color={EMERALD_GLOW} transparent opacity={0.4} depthWrite={false} blending={THREE.AdditiveBlending} />
         </lineSegments>
         <points>
           <bufferGeometry><bufferAttribute attach="attributes-position" args={[pointPos, 3]} count={pointPos.length / 3} /></bufferGeometry>
-          <pointsMaterial size={0.055} color={'#8cf0c8'} transparent opacity={0.9} depthWrite={false} blending={THREE.AdditiveBlending} sizeAttenuation />
+          <pointsMaterial size={0.05} color={'#8cf0c8'} transparent opacity={0.9} depthWrite={false} blending={THREE.AdditiveBlending} sizeAttenuation />
         </points>
       </group>
+      {/* tilted gold meridian ring, spinning in its own plane */}
+      <group ref={meridian} rotation={[Math.PI * 0.32, 0, 0]}>
+        <mesh><torusGeometry args={[1.72, 0.018, 12, 160]} /><meshStandardMaterial color={GOLD} emissive={GOLD_DEEP} emissiveIntensity={0.6} metalness={1} roughness={0.28} /></mesh>
+      </group>
 
-      <pointLight position={[1.6, 1.2, 2]} intensity={1.2} distance={7} color={GOLD} />
+      <pointLight position={[1.6, 1.2, 2]} intensity={1.3} distance={8} color={GOLD} />
       <pointLight position={[-1.4, -0.6, -1]} intensity={0.8} distance={6} color={EMERALD} />
     </group>
   );
@@ -99,11 +124,10 @@ function Core() {
 function Orbits() {
   const dots = useRef<THREE.InstancedMesh>(null!);
   const dummy = useMemo(() => new THREE.Object3D(), []);
-  const reduce = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const count = 6;
   useFrame((state) => {
     if (!dots.current) return;
-    const t = reduce ? 0 : state.clock.elapsedTime * 0.055;
+    const t = prefersReduced() ? 0 : state.clock.elapsedTime * 0.055;
     for (let i = 0; i < count; i++) {
       const a = (i / count + t) * Math.PI * 2;
       dummy.position.set(CENTER.x + Math.cos(a) * RING, 0.02, CENTER.z + Math.sin(a) * RING);
@@ -116,38 +140,115 @@ function Orbits() {
   const flat = [-Math.PI / 2, 0, 0] as [number, number, number];
   return (
     <group>
-      {/* inner faint guide */}
       <mesh position={CENTER} rotation={flat}><torusGeometry args={[2.7, 0.004, 8, 180]} /><meshBasicMaterial color={GOLD_DEEP} transparent opacity={0.12} depthWrite={false} /></mesh>
-      {/* main active orbit — the most prominent path (teal) */}
       <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING, 0.007, 10, 240]} /><meshBasicMaterial color={EMERALD} transparent opacity={0.34} depthWrite={false} /></mesh>
-      {/* outer boundary — very faint */}
       <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING + 2.5, 0.004, 8, 220]} /><meshBasicMaterial color={GOLD} transparent opacity={0.08} depthWrite={false} /></mesh>
-      {/* intentional teal points along the main orbit */}
       <instancedMesh ref={dots} args={[undefined, undefined, count]}><sphereGeometry args={[1, 8, 8]} /><meshBasicMaterial color={EMERALD_GLOW.getStyle()} transparent opacity={0.9} depthWrite={false} /></instancedMesh>
     </group>
   );
 }
 
+/** Distinct 3D emblem per node — each stage of the journey gets its own object, not a shared chart. */
+function Emblem({ icon, color, hover }: { icon: string; color: THREE.Color; hover: boolean }) {
+  const tetra = useMemo(() => new THREE.EdgesGeometry(new THREE.TetrahedronGeometry(0.34, 0)), []);
+  const ei = hover ? 0.95 : 0.5;
+  const metal = (m = 0.7, r = 0.3) => <meshStandardMaterial color={color} emissive={color} emissiveIntensity={ei} metalness={m} roughness={r} flatShading />;
+  const gold = (i = 0.5) => <meshStandardMaterial color={GOLD} emissive={GOLD_DEEP} emissiveIntensity={hover ? i + 0.3 : i} metalness={1} roughness={0.28} />;
+
+  switch (icon) {
+    // Curator — an accountable figure / beacon: a plinth, a tapered body, a glowing head.
+    case 'curator':
+      return (
+        <group>
+          <mesh position={[0, 0.04, 0]}><cylinderGeometry args={[0.2, 0.24, 0.08, 20]} /><meshStandardMaterial color={'#0c1a13'} metalness={0.6} roughness={0.5} /></mesh>
+          <mesh position={[0, 0.32, 0]}><cylinderGeometry args={[0.1, 0.17, 0.48, 20]} />{metal(0.5, 0.4)}</mesh>
+          <mesh position={[0, 0.64, 0]}><sphereGeometry args={[0.13, 24, 24]} />{metal(0.3, 0.25)}</mesh>
+          <mesh position={[0, 0.64, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.19, 0.012, 10, 40]} />{gold(0.55)}</mesh>
+        </group>
+      );
+    // Strategy — a thesis with direction: a poised tetrahedron with gold edges.
+    case 'strategy':
+      return (
+        <group>
+          <mesh position={[0, 0.42, 0]}><tetrahedronGeometry args={[0.34, 0]} />{metal(0.4, 0.3)}</mesh>
+          <lineSegments position={[0, 0.42, 0]} geometry={tetra}>
+            <lineBasicMaterial color={GOLD} transparent opacity={0.85} depthWrite={false} blending={THREE.AdditiveBlending} />
+          </lineSegments>
+        </group>
+      );
+    // Vault — the on-chain vehicle: a solid cube with a gold seam band and a dial.
+    case 'vault':
+      return (
+        <group>
+          <mesh position={[0, 0.34, 0]}><boxGeometry args={[0.44, 0.44, 0.44]} />{metal(0.7, 0.3)}</mesh>
+          <mesh position={[0, 0.34, 0]}><boxGeometry args={[0.47, 0.09, 0.47]} />{gold(0.5)}</mesh>
+          <mesh position={[0, 0.34, 0.23]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.06, 0.06, 0.03, 20]} />{gold(0.7)}</mesh>
+        </group>
+      );
+    // Track record — accumulating, verifiable history: stacked discs growing over time.
+    case 'track': {
+      const discs = [0.3, 0.25, 0.2, 0.15];
+      return (
+        <group>
+          {discs.map((r, i) => (
+            <mesh key={i} position={[0, 0.08 + i * 0.12, 0]}>
+              <cylinderGeometry args={[r, r + 0.02, 0.09, 28]} />
+              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={ei * (0.6 + i * 0.14)} metalness={0.6} roughness={0.35} />
+            </mesh>
+          ))}
+        </group>
+      );
+    }
+    // p{VAULT} — conviction, priced: a struck coin on edge, slowly flipping.
+    case 'pvault':
+      return (
+        <group position={[0, 0.38, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh><cylinderGeometry args={[0.3, 0.3, 0.07, 40]} />{metal(0.95, 0.22)}</mesh>
+          <mesh><torusGeometry args={[0.3, 0.028, 14, 48]} />{gold(0.65)}</mesh>
+          <mesh position={[0, 0.04, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.16, 0.014, 10, 40]} />{gold(0.55)}</mesh>
+        </group>
+      );
+    // Performance market — an active, rising market: a proper ascending bar chart.
+    case 'market': {
+      const bars = [0.26, 0.4, 0.32, 0.56];
+      return (
+        <group>
+          {bars.map((h, i) => (
+            <mesh key={i} position={[-0.21 + i * 0.14, h / 2, 0]}>
+              <boxGeometry args={[0.1, h, 0.1]} />
+              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={ei} metalness={0.6} roughness={0.32} />
+            </mesh>
+          ))}
+        </group>
+      );
+    }
+    default:
+      return (
+        <mesh position={[0, 0.34, 0]}><octahedronGeometry args={[0.3, 0]} />{metal()}</mesh>
+      );
+  }
+}
+
+/** Per-emblem idle spin — coins flip briskly, figures/charts turn slowly for readability. */
+const SPIN: Record<string, number> = { pvault: 0.9, strategy: 0.5, vault: 0.35, track: 0.3, market: 0.22, curator: 0.2 };
+
 function AtlasNode({ zone, angle, onOpen }: { zone: ZoneMeta; angle: number; onOpen: () => void }) {
   const grp = useRef<THREE.Group>(null!);
   const island = useRef<THREE.Group>(null!);
+  const emblem = useRef<THREE.Group>(null!);
   const [hover, setHover] = useState(false);
-  const reduce = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const color = useMemo(() => new THREE.Color(zone.color), [zone.color]);
   const pos = useMemo(() => new THREE.Vector3(CENTER.x + Math.cos(angle) * RING, 0, CENTER.z + Math.sin(angle) * RING), [angle]);
-  // consistent, tidy data-bars (deterministic per node — not random noise)
-  const bars = useMemo(() => {
-    const heights = [0.32, 0.52, 0.4, 0.6, 0.36];
-    return heights.map((h, i) => ({ x: -0.26 + i * 0.13, h, w: 0.072 }));
-  }, []);
 
   useFrame((state, dt) => {
     if (!grp.current || !island.current) return;
+    const reduce = prefersReduced();
     const bob = reduce ? 0 : Math.sin(state.clock.elapsedTime * 0.7 + angle) * 0.04;
     grp.current.position.y = pos.y + bob;
-    const target = hover ? 1.09 : 1;
+    const target = hover ? 1.1 : 1;
     const s = island.current.scale.x + (target - island.current.scale.x) * Math.min(1, dt * 9);
     island.current.scale.setScalar(s);
+    if (emblem.current && !reduce) emblem.current.rotation.y += Math.min(dt, 0.05) * (SPIN[zone.icon] ?? 0.3);
   });
 
   const enter = () => { setHover(true); document.body.style.cursor = 'pointer'; };
@@ -156,24 +257,22 @@ function AtlasNode({ zone, angle, onOpen }: { zone: ZoneMeta; angle: number; onO
   return (
     <group ref={grp} position={[pos.x, pos.y, pos.z]}>
       <mesh onPointerOver={(e) => { e.stopPropagation(); enter(); }} onPointerOut={leave} onClick={(e) => { e.stopPropagation(); onOpen(); }}>
-        <cylinderGeometry args={[0.72, 0.72, 2.4, 8]} /><meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        <cylinderGeometry args={[0.78, 0.78, 2.6, 8]} /><meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       <group ref={island}>
         {/* grounding contact shadow */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.26, 0]}><circleGeometry args={[0.92, 40]} /><meshBasicMaterial color={'#000000'} transparent opacity={0.4} depthWrite={false} /></mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}><circleGeometry args={[0.62, 40]} /><meshBasicMaterial color={'#000000'} transparent opacity={0.42} depthWrite={false} /></mesh>
         {/* soft colour seat */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.24, 0]}><ringGeometry args={[0.55, 0.86, 40]} /><meshBasicMaterial color={color} transparent opacity={hover ? 0.2 : 0.08} depthWrite={false} /></mesh>
-        {/* clean hex platform */}
-        <mesh position={[0, -0.12, 0]}><cylinderGeometry args={[0.56, 0.66, 0.2, 6]} /><meshStandardMaterial color={'#0a1610'} metalness={0.55} roughness={0.5} flatShading /></mesh>
-        {/* refined gold outline */}
-        <mesh position={[0, -0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}><torusGeometry args={[0.56, 0.011, 6, 6]} /><meshStandardMaterial color={GOLD} emissive={GOLD_DEEP} emissiveIntensity={hover ? 0.7 : 0.32} metalness={1} roughness={0.28} /></mesh>
-        {/* consistent data bars */}
-        {bars.map((b, i) => (
-          <mesh key={i} position={[b.x, b.h / 2, 0]}><boxGeometry args={[b.w, b.h, b.w]} /><meshStandardMaterial color={color} emissive={color} emissiveIntensity={hover ? 0.8 : 0.4} metalness={0.6} roughness={0.35} /></mesh>
-        ))}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]}><ringGeometry args={[0.42, 0.66, 44]} /><meshBasicMaterial color={color} transparent opacity={hover ? 0.28 : 0.12} depthWrite={false} /></mesh>
+        {/* refined gold base ring */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.006, 0]}><torusGeometry args={[0.5, 0.012, 8, 60]} /><meshStandardMaterial color={GOLD} emissive={GOLD_DEEP} emissiveIntensity={hover ? 0.7 : 0.34} metalness={1} roughness={0.28} /></mesh>
+        {/* the distinct emblem */}
+        <group ref={emblem}>
+          <Emblem icon={zone.icon} color={color} hover={hover} />
+        </group>
       </group>
 
-      <Html center distanceFactor={11} position={[0, 1.35, 0]} zIndexRange={[20, 0]}>
+      <Html center distanceFactor={11} position={[0, 1.5, 0]} zIndexRange={[20, 0]}>
         <button onMouseEnter={enter} onMouseLeave={leave} onClick={onOpen} aria-label={`Open ${zone.label}`} data-hover={hover ? 'true' : 'false'} className="atlas-node-card"
           style={{ ['--nc' as string]: zone.color } as React.CSSProperties}>
           <span className="atlas-node-card__icon"><ZoneGlyph icon={zone.icon} size={15} /></span>
@@ -188,22 +287,33 @@ function AtlasNode({ zone, angle, onOpen }: { zone: ZoneMeta; angle: number; onO
 }
 
 function Scene({ onOpen }: { onOpen: (id: ZoneId) => void }) {
-  const { camera } = useThree();
   const spin = useRef<THREE.Group>(null!);
-  const target = useMemo(() => new THREE.Vector3(3.0, 0.5, 0), []);
-  useFrame((state, dt) => {
-    const px = state.pointer.x, py = state.pointer.y;
-    camera.position.x += (3.0 + px * 1.0 - camera.position.x) * 0.03;
-    camera.position.y += (5.2 - py * 0.6 - camera.position.y) * 0.03;
-    camera.lookAt(target);
-    if (spin.current) spin.current.rotation.y += Math.min(dt, 0.05) * 0.09; // whole model loops; clamp for paused→resume
+  const interacting = useRef(false);
+  useFrame((_state, dt) => {
+    // model breathes with a slow auto-spin, paused while the user is dragging (interruptible)
+    if (spin.current && !interacting.current && !prefersReduced()) spin.current.rotation.y += Math.min(dt, 0.05) * 0.07;
   });
   return (
     <group>
-      <ambientLight intensity={0.26} color={EMERALD} />
-      <directionalLight position={[6, 10, 6]} intensity={1.0} color={GOLD} />
+      <ambientLight intensity={0.28} color={EMERALD} />
+      <directionalLight position={[6, 10, 6]} intensity={1.05} color={GOLD} />
       <directionalLight position={[-6, 4, -4]} intensity={0.45} color={EMERALD} />
-      {/* offset shifts the model right; inner group rotates continuously around the globe */}
+      <OrbitControls
+        makeDefault
+        target={ORBIT_TARGET}
+        enablePan={false}
+        enableZoom
+        minDistance={7}
+        maxDistance={24}
+        enableDamping
+        dampingFactor={0.08}
+        rotateSpeed={0.5}
+        zoomSpeed={0.7}
+        minPolarAngle={0.18}
+        maxPolarAngle={Math.PI * 0.52}
+        onStart={() => { interacting.current = true; }}
+        onEnd={() => { interacting.current = false; }}
+      />
       <group position={ATLAS_OFFSET}>
         <group ref={spin}>
           <Core />
@@ -238,7 +348,7 @@ export function AtlasHero({ className, style }: { className?: string; style?: Re
   }, []);
 
   return (
-    <div ref={wrapRef} className={className} style={{ WebkitMaskImage: mask, maskImage: mask, ...style }}>
+    <div ref={wrapRef} className={className} style={{ position: 'relative', WebkitMaskImage: mask, maskImage: mask, ...style }}>
       <Canvas frameloop={active ? 'always' : 'never'} dpr={[1, 1.4]} gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 40, near: 0.1, far: 120, position: [3.0, 5.2, 14.5] }}>
         <FitParent />
         <Suspense fallback={null}>
@@ -248,6 +358,17 @@ export function AtlasHero({ className, style }: { className?: string; style?: Re
           <Bloom intensity={0.62} luminanceThreshold={0.5} luminanceSmoothing={0.9} mipmapBlur />
         </EffectComposer>
       </Canvas>
+      {/* discoverability: the model is now orbit + zoom interactive */}
+      <div aria-hidden className="font-mono" style={{
+        position: 'absolute', right: 18, bottom: 16, display: 'inline-flex', alignItems: 'center', gap: 7,
+        fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(195,207,199,0.6)',
+        border: '1px solid var(--border)', borderRadius: 999, padding: '5px 11px',
+        background: 'rgba(12,18,15,0.42)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+        pointerEvents: 'none', userSelect: 'none',
+      }}>
+        <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--emerald-glow)' }} />
+        Drag to orbit · scroll to zoom
+      </div>
     </div>
   );
 }

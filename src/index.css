@@ -414,6 +414,76 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* ── Journey — "The Path" filmstrip ── */
+.jmap-stage {
+  position: relative;
+  height: 372px;
+  margin-top: 30px;
+  perspective: 1500px;
+  perspective-origin: 50% 44%;
+}
+.jmap-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 30px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(16, 24, 20, 0.82), rgba(11, 16, 13, 0.9));
+  box-shadow: 0 26px 70px -30px rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: border-color 240ms var(--ease-out2), box-shadow 240ms var(--ease-out2);
+}
+.jmap-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--sc), transparent);
+  opacity: 0.5;
+}
+.jmap-card[data-active='true'] {
+  border-color: color-mix(in srgb, var(--sc) 55%, transparent);
+  box-shadow: 0 34px 90px -26px color-mix(in srgb, var(--sc) 42%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.jmap-card__wash { position: absolute; inset: 0; pointer-events: none; transition: background 240ms ease; }
+.jmap-badge {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  border: 1px solid;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+}
+.jmap-rail { position: relative; max-width: 620px; margin: 34px auto 0; height: 26px; }
+.jmap-rail__track { position: absolute; top: 12px; left: 10px; right: 10px; height: 2px; background: rgba(234, 230, 218, 0.12); border-radius: 2px; overflow: hidden; }
+.jmap-rail__fill { position: absolute; inset: 0; transform-origin: left; background: linear-gradient(90deg, #c9a24b, #38e0a0); border-radius: 2px; }
+.jmap-rail__nodes { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; }
+.jmap-node { width: 26px; height: 26px; display: grid; place-items: center; background: none; border: none; cursor: pointer; padding: 0; }
+.jmap-node__dot { width: 9px; height: 9px; border-radius: 999px; background: rgba(159, 176, 166, 0.4); transition: width 240ms var(--ease-out2), height 240ms var(--ease-out2), background 200ms ease, box-shadow 200ms ease; }
+.jmap-node__dot[data-state='done'] { background: #38e0a0; }
+.jmap-node__dot[data-state='on'] { width: 14px; height: 14px; background: var(--sc); box-shadow: 0 0 14px var(--sc); }
+.jmap-arrow {
+  width: 40px; height: 40px; border-radius: 999px; display: grid; place-items: center;
+  background: rgba(7, 12, 9, 0.55); border: 1px solid var(--border-strong); color: var(--text); cursor: pointer;
+  transition: border-color 180ms var(--ease-out2), color 180ms var(--ease-out2), opacity 180ms ease;
+}
+.jmap-arrow:disabled { opacity: 0.32; cursor: default; }
+@media (hover: hover) and (pointer: fine) {
+  .jmap-arrow:not(:disabled):hover { border-color: rgba(228, 200, 119, 0.5); color: var(--primary); }
+}
+@media (max-width: 560px) {
+  .jmap-stage { height: 340px; }
+  .jmap-card { padding: 22px 22px; }
+}
+
 /* ── Mechanics Sandbox ── */
 .sandbox-controls {
   display: grid;
