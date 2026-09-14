@@ -433,7 +433,7 @@ body {
 }
 
 /* ── Post Studio — compact topic gallery (fits one viewport) + per-topic page ── */
-.studio-section { margin-top: 22px; }
+.studio-section { margin-top: 18px; }
 .studio-section__cat {
   display: inline-flex; align-items: center; gap: 9px;
   font-size: 9.5px; letter-spacing: 0.3em; text-transform: uppercase;
@@ -448,7 +448,7 @@ body {
 .studio-topic {
   position: relative; overflow: hidden;
   display: flex; flex-direction: column;
-  padding: 15px 16px 16px; min-height: 108px;
+  padding: 13px 15px 14px; min-height: 92px;
   border: 1px solid var(--border); border-radius: 14px;
   background: linear-gradient(155deg, rgba(18, 26, 21, 0.6), rgba(11, 16, 13, 0.86));
   text-decoration: none;
@@ -515,10 +515,37 @@ body {
 }
 .home-pharos-link:hover { color: var(--primary); }
 
+/* ── Allocator's Guide — Genesis strategy cards ── */
+.genesis-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.genesis-card {
+  position: relative; overflow: hidden;
+  padding: 15px 16px 16px; border-radius: 14px;
+  border: 1px solid var(--border);
+  background: linear-gradient(155deg, color-mix(in srgb, var(--c) 8%, rgba(16,24,20,0.55)), rgba(11,16,13,0.86));
+  transition: border-color 220ms var(--ease-out2), transform 220ms var(--ease-out2), box-shadow 220ms var(--ease-out2);
+}
+.genesis-card::before {
+  content: ''; position: absolute; left: 16px; right: 16px; top: 0; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--c), transparent 85%); opacity: 0.8;
+}
+.genesis-card__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+.genesis-card__mark { display: inline-flex; }
+.genesis-card__tag {
+  font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c);
+  border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); border-radius: 999px; padding: 4px 9px;
+  background: color-mix(in srgb, var(--c) 8%, transparent);
+}
+.genesis-card__name { font-size: 15px; font-weight: 600; color: var(--text-hi); line-height: 1.2; }
+.genesis-card__desc { font-size: 12px; line-height: 1.5; color: var(--mist); margin-top: 6px; }
+@media (hover: hover) and (pointer: fine) {
+  .genesis-card:hover { border-color: color-mix(in srgb, var(--c) 40%, var(--border)); transform: translateY(-2px); box-shadow: 0 18px 36px -26px color-mix(in srgb, var(--c) 40%, transparent); }
+}
+.genesis-note { margin-top: 14px; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(198,210,202,0.5); }
+
 /* ── Detail pages (Program / Participate) ── */
 .detail-tabs {
-  display: flex; flex-wrap: wrap; gap: 8px;
-  margin-top: 18px; padding-bottom: 20px; border-bottom: 1px solid var(--border);
+  display: flex; flex-wrap: wrap; gap: 7px;
+  margin-top: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
 }
 .detail-tab {
   padding: 8px 14px; border-radius: 999px; cursor: pointer;
@@ -551,12 +578,12 @@ body {
 }
 .detail-facts {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px;
-  margin-top: 30px; border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+  margin-top: 22px; border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
   background: var(--border);
 }
-.detail-fact { padding: 16px 18px; background: rgba(12, 18, 15, 0.72); }
-.detail-fact__k { font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--mist); margin-bottom: 7px; }
-.detail-fact__v { font-size: 13.5px; line-height: 1.4; color: var(--text-hi); }
+.detail-fact { padding: 13px 16px; background: rgba(12, 18, 15, 0.72); }
+.detail-fact__k { font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--mist); margin-bottom: 6px; }
+.detail-fact__v { font-size: 13px; line-height: 1.38; color: var(--text-hi); }
 /* icon-only prev/next pinned to the sides */
 .detail-side {
   position: fixed; top: 50%; transform: translateY(-50%);
@@ -594,7 +621,7 @@ body {
 /* detail-page branding footer */
 .detail-brand {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  margin-top: 40px; padding: 18px 20px; border-radius: 14px;
+  margin-top: 26px; padding: 13px 16px; border-radius: 14px;
   border: 1px solid var(--border); background: rgba(12, 18, 15, 0.5);
 }
 .detail-brand__mark { display: inline-flex; opacity: 0.9; }

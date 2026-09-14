@@ -50,7 +50,7 @@ export function DetailScaffold(p: DetailProps) {
   }, [navigate, p.prev, p.next]);
 
   return (
-    <div style={{ paddingTop: 100, paddingBottom: 84 }}>
+    <div style={{ paddingTop: 80, paddingBottom: 56 }}>
       <Container style={{ maxWidth: 880 }}>
         <motion.button onClick={() => navigate(p.backTo)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pressable detail-back font-mono">
           <span style={{ transform: 'scaleX(-1)', display: 'inline-flex' }}><IconArrow size={13} /></span> {p.backLabel}
@@ -76,19 +76,19 @@ export function DetailScaffold(p: DetailProps) {
             {p.status && <StatusPill label={p.status} tone={p.statusTone ?? 'mute'} />}
           </motion.div>
 
-          <motion.h1 variants={rise} className="font-display" style={{ fontWeight: 300, fontSize: 'clamp(2.1rem,5vw,3.4rem)', color: 'var(--text-hi)', margin: '14px 0 6px', lineHeight: 1.04, letterSpacing: '-0.01em' }}>
+          <motion.h1 variants={rise} className="font-display" style={{ fontWeight: 300, fontSize: 'clamp(1.9rem,4.4vw,3rem)', color: 'var(--text-hi)', margin: '10px 0 4px', lineHeight: 1.04, letterSpacing: '-0.01em' }}>
             {p.title}{p.titleEm && <> <em style={{ fontStyle: 'italic', color: 'var(--primary)' }}>{p.titleEm}</em></>}
           </motion.h1>
 
           {p.pills && p.pills.length > 0 && (
-            <motion.div variants={rise} className="flex flex-wrap gap-2" style={{ marginTop: 12 }}>
+            <motion.div variants={rise} className="flex flex-wrap gap-2" style={{ marginTop: 10 }}>
               {p.pills.map((x) => <span key={x} className="detail-pill font-mono">{x}</span>)}
             </motion.div>
           )}
 
-          <motion.div variants={rise} style={{ marginTop: 26, maxWidth: 680, position: 'relative' }}>
+          <motion.div variants={rise} style={{ marginTop: 18, maxWidth: 700, position: 'relative' }}>
             {p.long.map((para, i) => (
-              <p key={i} className="font-display" style={{ fontSize: 15.5, lineHeight: 1.82, color: 'var(--text)', marginBottom: 16 }}>{para}</p>
+              <p key={i} className="font-display" style={{ fontSize: 14.5, lineHeight: 1.72, color: 'var(--text)', marginBottom: 12 }}>{para}</p>
             ))}
           </motion.div>
 
@@ -104,7 +104,7 @@ export function DetailScaffold(p: DetailProps) {
           )}
 
           {(p.cta || p.secondary) && (
-            <motion.div variants={rise} className="flex items-center gap-3 flex-wrap" style={{ marginTop: 28 }}>
+            <motion.div variants={rise} className="flex items-center gap-3 flex-wrap" style={{ marginTop: 20 }}>
               {p.cta && (p.cta.href ? <CTA primary href={p.cta.href}>{p.cta.label}</CTA> : <CTA primary to={p.cta.to!}>{p.cta.label}</CTA>)}
               {p.secondary && <CTA to={p.secondary.to}>{p.secondary.label}</CTA>}
             </motion.div>

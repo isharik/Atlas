@@ -71,6 +71,8 @@ function pebbleTexture() {
   ctx.fillStyle = g; ctx.fillRect(0, 0, s, s);
   const t = new THREE.CanvasTexture(cvs); t.needsUpdate = true; return t;
 }
+// one shared round sprite for the orbit particles (soft glow, no square edges)
+const PEBBLE_SPRITE = typeof document !== 'undefined' ? pebbleTexture() : undefined;
 function Core() {
   const shell = useRef<THREE.Group>(null!);
   const sprite = useMemo(() => pebbleTexture(), []);
@@ -126,26 +128,27 @@ function ringPoints(radius: number, count: number, size: number, goldChance: num
     const a = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.06;
     const r = radius * (1 + (Math.random() - 0.5) * 0.05);
     pos[i * 3] = Math.cos(a) * r; pos[i * 3 + 1] = (Math.random() - 0.5) * 0.09; pos[i * 3 + 2] = Math.sin(a) * r;
-    if (Math.random() < goldChance) c.copy(GOLD_WARM); else c.copy(Math.random() < 0.28 ? TEAL_LT : TEAL);
-    const bright = Math.random() < 0.09 ? 1 : 0.22 + Math.random() * 0.32; // only a few glow strongly
-    const fade = 0.45 + Math.random() * 0.55;                               // irregular gaps + darkening
+    if (Math.random() < goldChance) c.copy(GOLD_WARM); else c.copy(Math.random() < 0.32 ? TEAL_LT : TEAL);
+    const bright = Math.random() < 0.16 ? 1 : 0.42 + Math.random() * 0.4; // more of them read clearly
+    const fade = 0.6 + Math.random() * 0.4;                               // gentle irregularity, higher floor
     const m = bright * fade;
     col[i * 3] = c.r * m; col[i * 3 + 1] = c.g * m; col[i * 3 + 2] = c.b * m;
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  return new THREE.Points(g, new THREE.PointsMaterial({ size, sizeAttenuation: true, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending }));
+  // round sprite + additive = soft glowing dots
+  return new THREE.Points(g, new THREE.PointsMaterial({ map: PEBBLE_SPRITE, size, sizeAttenuation: true, vertexColors: true, transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending }));
 }
 
 // concentric particle orbits — inner tight around the hole, outer progressively wider; gold grows outward
 const RING_CFG = [
-  { r: 1.5, n: 80, size: 0.04, gold: 0, speed: 0.05 },
-  { r: 2.3, n: 120, size: 0.042, gold: 0.01, speed: 0.04 },
-  { r: 3.2, n: 160, size: 0.046, gold: 0.02, speed: 0.032 },
-  { r: 4.2, n: 200, size: 0.05, gold: 0.03, speed: 0.026 },
-  { r: RING, n: 250, size: 0.052, gold: 0.05, speed: 0.02 },
-  { r: 6.6, n: 300, size: 0.055, gold: 0.14, speed: 0.014 },
+  { r: 1.5, n: 80, size: 0.07, gold: 0, speed: 0.05 },
+  { r: 2.3, n: 120, size: 0.072, gold: 0.01, speed: 0.04 },
+  { r: 3.2, n: 160, size: 0.078, gold: 0.02, speed: 0.032 },
+  { r: 4.2, n: 200, size: 0.084, gold: 0.03, speed: 0.026 },
+  { r: RING, n: 250, size: 0.088, gold: 0.05, speed: 0.02 },
+  { r: 6.6, n: 300, size: 0.092, gold: 0.14, speed: 0.014 },
 ];
 
 /** Orbital system — concentric particle trails, each drifting at its own slow speed. */
@@ -357,15 +360,15 @@ export function AtlasHero({ className, style }: { className?: string; style?: Re
   return (
     <div className={className} style={{ WebkitMaskImage: mask, maskImage: mask, ...style }}>
       {/* frameloop stays 'always' so the system keeps spinning — browsers already throttle rAF in a backgrounded tab */}
-      <Canvas frameloop="always" dpr={[1, 2]} gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 42, near: 0.1, far: 120, position: [3.2, 6.6, 13.2] }}>
+      <Canvas frameloop="always" dpr={[1, 1.75]} gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 42, near: 0.1, far: 120, position: [3.2, 6.6, 13.2] }}>
         <FitParent />
         <Suspense fallback={null}>
           <Scene onOpen={open} />
         </Suspense>
         {/* multisampling 8 = HD anti-aliased edges through the postprocessing pass (canvas AA doesn't reach the composer) */}
         {/* restrained bloom — enough to feel cinematic, not neon */}
-        <EffectComposer enableNormalPass={false} multisampling={8}>
-          <Bloom intensity={0.42} luminanceThreshold={0.62} luminanceSmoothing={0.9} mipmapBlur />
+        <EffectComposer enableNormalPass={false} multisampling={4}>
+          <Bloom intensity={0.46} luminanceThreshold={0.6} luminanceSmoothing={0.9} mipmapBlur />
         </EffectComposer>
       </Canvas>
     </div>

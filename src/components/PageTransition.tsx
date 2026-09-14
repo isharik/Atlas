@@ -3,15 +3,15 @@ import type { ReactNode } from 'react';
 
 const ease = [0.23, 1, 0.32, 1] as [number, number, number, number];
 
-/** Intentional page open/close — soft fade + lift + blur, matching the source's power-ease feel. */
+/** Intentional page open — a snappy fade + lift. Transform/opacity only (no full-page blur filter),
+ *  so navigation stays buttery even on high-refresh displays. */
 export function PageTransition({ children }: { children: ReactNode }) {
   return (
     <motion.div
-      style={{ minHeight: '100%' }}
-      initial={{ opacity: 0, y: 16, filter: 'blur(8px)' }}
-      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-      exit={{ opacity: 0, y: -12, filter: 'blur(8px)' }}
-      transition={{ duration: 0.5, ease }}
+      style={{ minHeight: '100%', willChange: 'transform, opacity' }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.34, ease }}
     >
       {children}
     </motion.div>

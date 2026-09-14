@@ -24,20 +24,16 @@ export function CreatePost() {
   }, [grouped]);
 
   return (
-    <div style={{ paddingTop: 84, paddingBottom: 40 }}>
+    <div style={{ paddingTop: 72, paddingBottom: 32 }}>
       <Container style={{ maxWidth: 1160 }}>
-        <div className="flex items-baseline justify-between flex-wrap" style={{ gap: 12 }}>
-          <div>
-            <Kicker>Post Studio</Kicker>
-            <motion.h1 className="font-display" style={{ fontWeight: 300, fontSize: 'clamp(1.8rem,3.6vw,2.7rem)', color: 'var(--text-hi)', margin: '10px 0 0', letterSpacing: '-0.01em', lineHeight: 1.04 }}
-              initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease }}>
-              Post about Prosper. <em style={{ fontStyle: 'italic', color: 'var(--primary)' }}>Via Atlas.</em>
-            </motion.h1>
-          </div>
-          <motion.p className="font-display" style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--mist)', maxWidth: 340 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-            Pick a topic — each opens in its own space with a branded card and captions in three lengths.
-          </motion.p>
-        </div>
+        <Kicker>Post Studio</Kicker>
+        <motion.h1 className="font-display" style={{ fontWeight: 300, fontSize: 'clamp(1.8rem,3.6vw,2.7rem)', color: 'var(--text-hi)', margin: '10px 0 8px', letterSpacing: '-0.01em', lineHeight: 1.04 }}
+          initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease }}>
+          Post about Prosper. <em style={{ fontStyle: 'italic', color: 'var(--primary)' }}>Via Atlas.</em>
+        </motion.h1>
+        <motion.p className="font-display" style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--mist)', maxWidth: 560 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+          Pick a topic — each opens in its own space with a branded card and ready-to-post captions in three lengths.
+        </motion.p>
 
         {grouped.map((g, gi) => {
           const color = CAT_COLORS[gi % CAT_COLORS.length];

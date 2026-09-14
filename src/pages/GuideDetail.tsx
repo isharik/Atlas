@@ -1,6 +1,7 @@
 import { Navigate, useParams } from 'react-router-dom';
 import { DetailScaffold } from '@/components/DetailScaffold';
 import { StepGlyphFallback } from '@/components/ui/programGlyphs';
+import { GenesisStrategies } from '@/components/GenesisStrategies';
 
 const BLOG_URL = 'https://www.pros-per.xyz/blogs/an-allocators-guide-to-prosper-curators-vaults';
 
@@ -94,6 +95,7 @@ export function GuideDetail() {
       next={{ to: `/guide/${next.slug}`, label: next.title }}
       backTo="/"
       backLabel="Home"
+      extra={s.slug === 'sneak-peek' ? <GenesisStrategies /> : undefined}
     />
   );
 }
