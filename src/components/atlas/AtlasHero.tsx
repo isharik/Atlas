@@ -15,8 +15,8 @@ const GOLD_DEEP = new THREE.Color('#9a7a34');
 const EMERALD = new THREE.Color('#2fbf8f');
 const EMERALD_GLOW = new THREE.Color('#38e0a0');
 const CENTER = new THREE.Vector3(0, 0, 0);
-const ATLAS_OFFSET: [number, number, number] = [4.8, 0, 0]; // model centre — sits right of the camera axis, giving the copy room at left
-const CAM_LOOK = new THREE.Vector3(3.3, 0.3, 0); // fixed look point (left of the model, so the orbital reads on the right)
+const ATLAS_OFFSET: [number, number, number] = [5.1, 0, 0]; // model centre — sits right of the camera axis, giving the copy room at left
+const CAM_LOOK = new THREE.Vector3(3.2, -0.75, 0); // fixed look point (left of + below the model, so the orbital reads upper-right)
 const RING = 5.2;
 
 const prefersReduced = () =>
@@ -138,12 +138,22 @@ function Orbits() {
     dots.current.instanceMatrix.needsUpdate = true;
   });
   const flat = [-Math.PI / 2, 0, 0] as [number, number, number];
+  // Additive glow so the lines read as light — they never wash out or vanish edge-on while the system turns.
   return (
     <group>
-      <mesh position={CENTER} rotation={flat}><torusGeometry args={[2.7, 0.004, 8, 180]} /><meshBasicMaterial color={GOLD_DEEP} transparent opacity={0.12} depthWrite={false} /></mesh>
-      <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING, 0.007, 10, 240]} /><meshBasicMaterial color={EMERALD} transparent opacity={0.34} depthWrite={false} /></mesh>
-      <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING + 2.5, 0.004, 8, 220]} /><meshBasicMaterial color={GOLD} transparent opacity={0.08} depthWrite={false} /></mesh>
-      <instancedMesh ref={dots} args={[undefined, undefined, count]}><sphereGeometry args={[1, 8, 8]} /><meshBasicMaterial color={EMERALD_GLOW.getStyle()} transparent opacity={0.9} depthWrite={false} /></instancedMesh>
+      {/* inner guide ring */}
+      <mesh position={CENTER} rotation={flat}><torusGeometry args={[2.9, 0.008, 12, 220]} /><meshBasicMaterial color={GOLD_DEEP} transparent opacity={0.24} depthWrite={false} blending={THREE.AdditiveBlending} /></mesh>
+      {/* main orbit — broad soft aura halo (the glow) */}
+      <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING, 0.12, 16, 240]} /><meshBasicMaterial color={EMERALD_GLOW} transparent opacity={0.1} depthWrite={false} blending={THREE.AdditiveBlending} /></mesh>
+      {/* main orbit — mid glow */}
+      <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING, 0.05, 16, 300]} /><meshBasicMaterial color={EMERALD_GLOW} transparent opacity={0.22} depthWrite={false} blending={THREE.AdditiveBlending} /></mesh>
+      {/* main orbit — crisp bright core line (the path the nodes ride) */}
+      <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING, 0.02, 16, 360]} /><meshBasicMaterial color={'#c9ffe9'} transparent opacity={0.75} depthWrite={false} blending={THREE.AdditiveBlending} /></mesh>
+      {/* outer boundary — a darker, smooth gold ring with a faint aura (high segment count = no breakage) */}
+      <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING + 1.8, 0.07, 16, 300]} /><meshBasicMaterial color={GOLD} transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} /></mesh>
+      <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING + 1.8, 0.015, 18, 420]} /><meshBasicMaterial color={GOLD_DEEP} transparent opacity={0.6} depthWrite={false} /></mesh>
+      {/* travelling glints along the path */}
+      <instancedMesh ref={dots} args={[undefined, undefined, count]}><sphereGeometry args={[1, 10, 10]} /><meshBasicMaterial color={'#b9ffe4'} transparent opacity={0.95} depthWrite={false} blending={THREE.AdditiveBlending} /></instancedMesh>
     </group>
   );
 }
@@ -320,7 +330,7 @@ export function AtlasHero({ className, style }: { className?: string; style?: Re
   return (
     <div className={className} style={{ WebkitMaskImage: mask, maskImage: mask, ...style }}>
       {/* frameloop stays 'always' so the system keeps spinning — browsers already throttle rAF in a backgrounded tab */}
-      <Canvas frameloop="always" dpr={[1, 1.4]} gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 42, near: 0.1, far: 120, position: [3.3, 12.2, 13.4] }}>
+      <Canvas frameloop="always" dpr={[1, 1.4]} gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 42, near: 0.1, far: 120, position: [3.2, 6.6, 13.2] }}>
         <FitParent />
         <Suspense fallback={null}>
           <Scene onOpen={open} />
