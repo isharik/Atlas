@@ -5,7 +5,9 @@ import { Landing } from './pages/Landing';
 import { Ecosystem } from './pages/Ecosystem';
 import { ZonePage } from './pages/ZonePage';
 import { Participate } from './pages/Participate';
+import { ParticipateDetail } from './pages/ParticipateDetail';
 import { Programs } from './pages/Programs';
+import { ProgramDetail } from './pages/ProgramDetail';
 import { Journey } from './pages/Journey';
 import { Pharos } from './pages/Pharos';
 import { Faq } from './pages/Faq';
@@ -30,7 +32,9 @@ export default function App() {
         <Route path="/ecosystem" element={wrap(<Ecosystem />)} />
         <Route path="/zone/:id" element={wrap(<ZonePage />)} />
         <Route path="/participate" element={wrap(<Participate />)} />
+        <Route path="/participate/:id" element={wrap(<ParticipateDetail />)} />
         <Route path="/programs" element={wrap(<Programs />)} />
+        <Route path="/programs/:slug" element={wrap(<ProgramDetail />)} />
         <Route path="/journey" element={wrap(<Journey />)} />
         <Route path="/sandbox" element={wrap(<Sandbox />)} />
         <Route path="/studio" element={wrap(<CuratorStudio />)} />

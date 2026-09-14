@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Container, Kicker, CTA, StatusPill } from '@/components/PageBits';
+import { Container, Kicker, StatusPill } from '@/components/PageBits';
 import { TiltCard } from '@/components/TiltCard';
+import { IconArrow } from '@/components/ui/icons';
 import { ROLES } from '@/data/ecosystem';
 
 const ease = [0.23, 1, 0.32, 1] as [number, number, number, number];
@@ -32,14 +33,9 @@ export function Participate() {
               <div className="font-head" style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-hi)', letterSpacing: '0.01em' }}>{r.title}</div>
               <p className="font-display" style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--mist)', margin: 0, flex: 1 }}>{r.body}</p>
               <div className="flex items-center gap-3" style={{ marginTop: 6 }}>
-                {r.cta ? <CTA primary href={r.cta.href}>{r.cta.label}</CTA> : <span className="font-mono" style={{ fontSize: 10, letterSpacing: '0.16em', color: 'var(--mist)', textTransform: 'uppercase' }}>Opens with launch</span>}
+                <Link to={`/participate/${r.id}`} className="pressable card-open font-mono" aria-label={`Open ${r.audience}`}>Open<span className="card-open__arrow"><IconArrow size={14} /></span></Link>
                 {r.badge && <span className="font-mono" style={{ fontSize: 10, letterSpacing: '0.14em', color: 'var(--primary)', border: '1px solid rgba(228,200,119,0.4)', padding: '5px 10px', borderRadius: 999 }}>{r.badge}</span>}
               </div>
-              {r.id === 'curators' && (
-                <Link to="/studio" className="hover-gold font-mono" style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--mist)', textDecoration: 'none' }}>
-                  Design your Vault in the Studio →
-                </Link>
-              )}
             </TiltCard>
             </motion.div>
           ))}

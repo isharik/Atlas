@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { Container, Kicker, StatusPill } from '@/components/PageBits';
 import { TiltCard } from '@/components/TiltCard';
 import { IconArrow } from '@/components/ui/icons';
 import { PROGRAMS, PARTNERS } from '@/data/ecosystem';
+import { slugify } from '@/lib/slug';
 
 const ease = [0.23, 1, 0.32, 1] as [number, number, number, number];
 const rise = { hidden: { opacity: 0, y: 22, filter: 'blur(4px)' }, show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.7, ease } } };
@@ -21,8 +23,8 @@ export function Programs() {
         </motion.p>
 
         <motion.div variants={{ show: { transition: { staggerChildren: 0.08 } } }} initial="hidden" whileInView="show" viewport={viewport} className="grid-cards" style={{ marginTop: 40 }}>
-          {PROGRAMS.map((p) => {
-            const card = (
+          {PROGRAMS.map((p) => (
+            <motion.div key={p.name} variants={rise}>
               <TiltCard max={5} accent="rgba(56,224,160,0.12)" style={{ padding: 24, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(15,22,18,0.5)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
                   <span className="font-head" style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-hi)' }}>{p.name}</span>
@@ -30,37 +32,24 @@ export function Programs() {
                 </div>
                 {p.reward && <div className="font-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--primary)', marginBottom: 8 }}>{p.reward}</div>}
                 <p className="font-display" style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--mist)', margin: 0, flex: 1 }}>{p.detail}</p>
-                {p.href && (
-                  <span className="prog-cta font-mono" style={{ marginTop: 16 }}>
-                    {p.hrefLabel ?? 'Learn more'}
-                    <span className="prog-cta__arrow"><IconArrow size={13} /></span>
-                  </span>
-                )}
+                <Link to={`/programs/${slugify(p.name)}`} className="pressable card-open font-mono" aria-label={`Open ${p.name}`} style={{ marginTop: 18 }}>
+                  Open<span className="card-open__arrow"><IconArrow size={14} /></span>
+                </Link>
               </TiltCard>
-            );
-            return (
-              <motion.div key={p.name} variants={rise}>
-                {p.href ? (
-                  <a href={p.href} target="_blank" rel="noopener noreferrer" className="prog-link" aria-label={`${p.name} — ${p.hrefLabel ?? 'open link'}`}>
-                    {card}
-                  </a>
-                ) : card}
-              </motion.div>
-            );
-          })}
+            </motion.div>
+          ))}
         </motion.div>
 
-        <motion.div variants={{ show: { transition: { staggerChildren: 0.1 } } }} initial="hidden" whileInView="show" viewport={viewport} style={{ marginTop: 64 }}>
-          <motion.div variants={rise} className="eyebrow" style={{ fontSize: 11, letterSpacing: '0.4em', marginBottom: 18 }}>Ecosystem Partners</motion.div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
+        <motion.div variants={rise} initial="hidden" whileInView="show" viewport={viewport} style={{ marginTop: 64 }}>
+          <div className="eyebrow" style={{ fontSize: 11, letterSpacing: '0.4em', marginBottom: 18 }}>Ecosystem Partners</div>
+          <div className="partner-strip">
             {PARTNERS.map((pt) => (
-              <motion.div key={pt.name} variants={rise} className="flex items-center justify-between" style={{ padding: '18px 20px', borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(15,22,18,0.5)' }}>
-                <div>
-                  <span className="font-head" style={{ fontSize: 16, fontWeight: 600, color: 'var(--primary)' }}>{pt.name}</span>
-                  <span className="font-mono" style={{ fontSize: 10, color: 'var(--mist)', marginLeft: 8 }}>{pt.handle}</span>
-                </div>
-                <span className="font-display" style={{ fontSize: 12, color: 'var(--text-secondary, #9fb0a6)', maxWidth: 160, textAlign: 'right', lineHeight: 1.4 }}>{pt.role}</span>
-              </motion.div>
+              <div key={pt.name} className="partner">
+                <span className="partner__logo font-head" aria-hidden>{pt.name[0]}</span>
+                <span className="partner__name font-head">{pt.name}</span>
+                {pt.handle ? <span className="partner__handle font-mono">{pt.handle}</span> : <span className="partner__handle font-mono" style={{ opacity: 0 }}>—</span>}
+                <span className="partner__role font-display">{pt.role}</span>
+              </div>
             ))}
           </div>
         </motion.div>

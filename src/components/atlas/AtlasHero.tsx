@@ -52,54 +52,61 @@ function FitParent() {
 }
 
 /**
- * The Prosper core — a restrained cinematic black hole. A near-black event horizon with a thin
- * teal accretion ring, a warm-gold hot arc, a gravitational-lens rim, a photon arc bent over the
- * top, and a little dust drifting inward. Small (~12% of the orbit) — the anchor, never the star.
+ * The Prosper core — a luminous mesh ball holding a cloud of agitated ("angry") particles.
+ * A geodesic wireframe shell rotates slowly; inside, ~160 points jitter with turbulence, pulled
+ * back to centre and clamped to the shell so the energy stays contained. Teal primary, a little
+ * gold, a dark nucleus for depth. Small (~15% of the orbit) — an anchor, not the star.
  */
+const CORE_R = 1.05;   // shell radius
+const CORE_RMAX = 0.92; // particle containment radius
+const CORE_N = 160;
 function Core() {
-  const disk = useRef<THREE.Group>(null!);
-  const lens = useRef<THREE.Mesh>(null!);
-  const infall = useRef<THREE.Points>(null!);
-  const inData = useMemo(() => {
-    const N = 30;
-    const arr = new Float32Array(N * 3);
-    const st = Array.from({ length: N }, () => ({ r: 0.9 + Math.random() * 1.4, a: Math.random() * Math.PI * 2, sp: 0.14 + Math.random() * 0.22 }));
-    return { N, arr, st };
+  const shell = useRef<THREE.Group>(null!);
+  const cloud = useRef<THREE.Points>(null!);
+  const sim = useMemo(() => {
+    const pos = new Float32Array(CORE_N * 3), vel = new Float32Array(CORE_N * 3), col = new Float32Array(CORE_N * 3);
+    const c = new THREE.Color();
+    for (let i = 0; i < CORE_N; i++) {
+      const r = CORE_RMAX * Math.cbrt(Math.random()), th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
+      pos[i * 3] = r * Math.sin(ph) * Math.cos(th); pos[i * 3 + 1] = r * Math.cos(ph); pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
+      vel[i * 3] = (Math.random() - 0.5) * 0.4; vel[i * 3 + 1] = (Math.random() - 0.5) * 0.4; vel[i * 3 + 2] = (Math.random() - 0.5) * 0.4;
+      if (Math.random() < 0.12) c.copy(GOLD_WARM); else c.copy(Math.random() < 0.4 ? TEAL_LT : TEAL);
+      const m = 0.5 + Math.random() * 0.5;
+      col[i * 3] = c.r * m; col[i * 3 + 1] = c.g * m; col[i * 3 + 2] = c.b * m;
+    }
+    return { pos, vel, col };
   }, []);
-  const inGeo = useMemo(() => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(inData.arr, 3)); return g; }, [inData]);
-  useFrame((state, dt) => {
+  const geo = useMemo(() => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(sim.pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(sim.col, 3)); return g; }, [sim]);
+  const shellGeo = useMemo(() => new THREE.IcosahedronGeometry(CORE_R, 1), []);
+  const shellEdges = useMemo(() => new THREE.EdgesGeometry(shellGeo), [shellGeo]);
+  useFrame((_state, dt) => {
     const d = Math.min(dt, 0.05), reduce = prefersReduced();
-    if (disk.current && !reduce) disk.current.rotation.y += d * 0.18; // slow accretion rotation
-    if (lens.current) { const s = reduce ? 1 : 1 + Math.sin(state.clock.elapsedTime * 0.6) * 0.02; lens.current.scale.setScalar(s); } // faint shimmer
-    if (infall.current && !reduce) {
-      const { N, arr, st } = inData;
-      for (let i = 0; i < N; i++) {
-        const p = st[i]; p.r -= p.sp * d; p.a += d * (0.6 / p.r);
-        if (p.r < 0.5) { p.r = 1.5 + Math.random() * 0.9; p.a = Math.random() * Math.PI * 2; }
-        arr[i * 3] = Math.cos(p.a) * p.r; arr[i * 3 + 1] = (Math.random() - 0.5) * 0.02; arr[i * 3 + 2] = Math.sin(p.a) * p.r;
+    if (shell.current && !reduce) { shell.current.rotation.y += d * 0.12; shell.current.rotation.x += d * 0.05; }
+    if (cloud.current && !reduce) {
+      const { pos, vel } = sim, A = 3.6; // agitation strength
+      for (let i = 0; i < CORE_N; i++) {
+        const x = i * 3, y = x + 1, z = x + 2;
+        vel[x] += (Math.random() - 0.5) * A * d; vel[y] += (Math.random() - 0.5) * A * d; vel[z] += (Math.random() - 0.5) * A * d; // turbulent kicks
+        vel[x] -= pos[x] * 1.3 * d; vel[y] -= pos[y] * 1.3 * d; vel[z] -= pos[z] * 1.3 * d;                                       // pull to centre
+        vel[x] *= 0.92; vel[y] *= 0.92; vel[z] *= 0.92;                                                                          // damping
+        pos[x] += vel[x] * d; pos[y] += vel[y] * d; pos[z] += vel[z] * d;
+        const len = Math.hypot(pos[x], pos[y], pos[z]);
+        if (len > CORE_RMAX) { const s = CORE_RMAX / len; pos[x] *= s; pos[y] *= s; pos[z] *= s; vel[x] *= -0.4; vel[y] *= -0.4; vel[z] *= -0.4; } // bounce off shell
       }
-      inGeo.attributes.position.needsUpdate = true;
+      geo.attributes.position.needsUpdate = true;
     }
   });
-  const flat: [number, number, number] = [-Math.PI / 2, 0, 0];
-  const DS = THREE.DoubleSide, ADD = THREE.AdditiveBlending;
   return (
     <group position={CENTER}>
-      {/* event horizon — dark sphere + a faint rim shadow for spherical depth */}
-      <mesh><sphereGeometry args={[0.55, 48, 48]} /><meshBasicMaterial color={HORIZON} /></mesh>
-      <mesh><sphereGeometry args={[0.6, 48, 48]} /><meshBasicMaterial color={HORIZON} transparent opacity={0.55} depthWrite={false} /></mesh>
-      {/* gravitational-lens rim — a thin bright edge hugging the horizon */}
-      <mesh ref={lens} rotation={flat}><ringGeometry args={[0.55, 0.61, 200]} /><meshBasicMaterial color={TEAL_LT} transparent opacity={0.45} side={DS} depthWrite={false} blending={ADD} /></mesh>
-      {/* accretion disk — thin teal band with a warm hot arc; rotates slowly */}
-      <group ref={disk}>
-        <mesh rotation={flat}><ringGeometry args={[0.62, 0.92, 200]} /><meshBasicMaterial color={TEAL} transparent opacity={0.16} side={DS} depthWrite={false} blending={ADD} /></mesh>
-        <mesh rotation={flat}><ringGeometry args={[0.6, 0.86, 150, 1, 0.1, 1.15]} /><meshBasicMaterial color={'#f0e4c4'} transparent opacity={0.4} side={DS} depthWrite={false} blending={ADD} /></mesh>
-        <mesh rotation={flat}><ringGeometry args={[0.64, 0.8, 150, 1, Math.PI + 0.2, 0.7]} /><meshBasicMaterial color={GOLD_WARM} transparent opacity={0.28} side={DS} depthWrite={false} blending={ADD} /></mesh>
+      {/* dark nucleus for depth */}
+      <mesh><sphereGeometry args={[0.32, 32, 32]} /><meshBasicMaterial color={HORIZON} transparent opacity={0.85} depthWrite={false} /></mesh>
+      {/* agitated particle cloud */}
+      <points ref={cloud} geometry={geo}><pointsMaterial size={0.05} vertexColors transparent opacity={0.95} sizeAttenuation depthWrite={false} blending={THREE.AdditiveBlending} /></points>
+      {/* mesh-ball shell — geodesic wireframe + a whisper-thin skin */}
+      <group ref={shell}>
+        <lineSegments geometry={shellEdges}><lineBasicMaterial color={TEAL} transparent opacity={0.34} depthWrite={false} blending={THREE.AdditiveBlending} /></lineSegments>
+        <mesh geometry={shellGeo}><meshBasicMaterial color={TEAL} transparent opacity={0.04} side={THREE.DoubleSide} depthWrite={false} blending={THREE.AdditiveBlending} /></mesh>
       </group>
-      {/* photon arc bent over the top toward the viewer */}
-      <mesh rotation={[0.32, 0, 0]}><ringGeometry args={[0.58, 0.63, 160]} /><meshBasicMaterial color={TEAL_LT} transparent opacity={0.22} side={DS} depthWrite={false} blending={ADD} /></mesh>
-      {/* dust drifting inward */}
-      <points ref={infall} geometry={inGeo}><pointsMaterial size={0.035} color={TEAL_LT} transparent opacity={0.6} sizeAttenuation depthWrite={false} blending={ADD} /></points>
     </group>
   );
 }
@@ -131,8 +138,7 @@ const RING_CFG = [
   { r: 3.2, n: 160, size: 0.046, gold: 0.02, speed: 0.032 },
   { r: 4.2, n: 200, size: 0.05, gold: 0.03, speed: 0.026 },
   { r: RING, n: 250, size: 0.052, gold: 0.05, speed: 0.02 },
-  { r: 6.8, n: 310, size: 0.055, gold: 0.12, speed: 0.015 },
-  { r: 8.4, n: 370, size: 0.058, gold: 0.2, speed: 0.011 },
+  { r: 6.6, n: 300, size: 0.055, gold: 0.14, speed: 0.014 },
 ];
 
 /** Orbital system — concentric particle trails, each drifting at its own slow speed. */

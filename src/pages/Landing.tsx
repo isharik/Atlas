@@ -4,7 +4,7 @@ import { Wordmark } from '@/components/Wordmark';
 import { TiltCard } from '@/components/TiltCard';
 import { Container, CTA } from '@/components/PageBits';
 import { IconArrow, IconChevron } from '@/components/ui/icons';
-import { TAGLINES, PILLARS } from '@/data/ecosystem';
+import { TAGLINES, PILLARS, OFFICIAL_LINKS } from '@/data/ecosystem';
 import { useAudio } from '@/audio/AudioProvider';
 
 const ease = [0.23, 1, 0.32, 1] as [number, number, number, number];
@@ -53,6 +53,14 @@ export function Landing() {
               <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.24em', textTransform: 'uppercase' }}>Scroll to discover</span>
               <motion.span animate={{ y: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}><IconChevron size={13} /></motion.span>
             </button>
+          </motion.div>
+
+          {/* built-on Pharos — the infrastructure links live here rather than in the nav */}
+          <motion.div variants={heroItem} className="flex items-center gap-3 flex-wrap" style={{ marginTop: 22, pointerEvents: 'auto' }}>
+            <span className="font-mono" style={{ fontSize: 8.5, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'rgba(198,210,202,0.5)' }}>Built on Pharos</span>
+            <a href={OFFICIAL_LINKS.pharosSite} target="_blank" rel="noopener noreferrer" className="home-pharos-link font-mono">Pharos ↗</a>
+            <span style={{ color: 'rgba(198,210,202,0.3)' }}>·</span>
+            <a href={OFFICIAL_LINKS.pharosDocs} target="_blank" rel="noopener noreferrer" className="home-pharos-link font-mono">Docs ↗</a>
           </motion.div>
         </motion.div>
       </section>
