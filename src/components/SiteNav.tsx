@@ -11,7 +11,7 @@ interface NavGroup { label: string; to?: string; items?: NavItem[] }
 
 // Grouped navigation — categories keep the bar uncluttered.
 const NAV: NavGroup[] = [
-  { label: 'Explore', items: [{ label: 'Ecosystem', to: '/ecosystem' }, { label: 'Journey', to: '/journey' }] },
+  { label: 'Explore', items: [{ label: 'Ecosystem', to: '/ecosystem' }, { label: 'Journey', to: '/journey' }, { label: "Allocator's Guide", to: '/guide' }] },
   { label: 'Tools', items: [{ label: 'Sandbox', to: '/sandbox' }, { label: 'Studio', to: '/studio' }, { label: 'Create posts', to: '/create' }] },
   { label: 'Live', items: [{ label: 'Tracker', to: '/tracker' }, { label: 'Pulse', to: '/pulse' }, { label: 'Preview', to: '/preview' }] },
   { label: 'Community', items: [{ label: 'Professor Octo', to: '/octo' }, { label: 'Programs', to: '/programs' }, { label: 'Participate', to: '/participate' }] },

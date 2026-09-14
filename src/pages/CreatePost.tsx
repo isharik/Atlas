@@ -15,7 +15,13 @@ export function CreatePost() {
     () => POST_CATEGORIES.map((cat) => ({ cat, topics: POST_KITS.filter((t) => t.category === cat) })).filter((g) => g.topics.length),
     [],
   );
-  const order = useMemo(() => new Map(POST_KITS.map((t, i) => [t.id, i + 1])), []);
+  // number sequentially in the order the tiles actually appear on screen
+  const order = useMemo(() => {
+    const m = new Map<string, number>();
+    let n = 0;
+    grouped.forEach((g) => g.topics.forEach((t) => m.set(t.id, ++n)));
+    return m;
+  }, [grouped]);
 
   return (
     <div style={{ paddingTop: 84, paddingBottom: 40 }}>
@@ -45,12 +51,12 @@ export function CreatePost() {
                   <motion.div key={t.id} variants={rise}>
                     <Link to={`/create/${t.id}`} className="pressable studio-topic" aria-label={`Open ${t.label}`} style={{ ['--cat' as string]: color } as React.CSSProperties}>
                       <span aria-hidden className="studio-topic__wash" />
-                      <span aria-hidden className="studio-topic__no font-mono">{String(order.get(t.id) ?? 0).padStart(2, '0')}</span>
-                      <div className="studio-topic__body">
-                        <div className="studio-topic__label font-head">{t.label}</div>
-                        <div className="studio-topic__hint font-display">{t.hint}</div>
+                      <div className="studio-topic__top">
+                        <span className="studio-topic__no font-mono">{String(order.get(t.id) ?? 0).padStart(2, '0')}</span>
+                        <span className="studio-topic__open font-mono"><span className="studio-topic__arrow"><IconArrow size={13} /></span></span>
                       </div>
-                      <span className="studio-topic__open font-mono">Open<span className="studio-topic__arrow"><IconArrow size={13} /></span></span>
+                      <div className="studio-topic__label font-head">{t.label}</div>
+                      <div className="studio-topic__hint font-display">{t.hint}</div>
                     </Link>
                   </motion.div>
                 ))}

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Container, Kicker, CTA, StatusPill } from '@/components/PageBits';
@@ -110,21 +111,6 @@ export function DetailScaffold(p: DetailProps) {
           )}
         </motion.div>
 
-        <div className="detail-nav">
-          {p.prev ? (
-            <button className="pressable detail-nav__btn" onClick={() => navigate(p.prev!.to)} aria-label={`Previous: ${p.prev.label}`}>
-              <span className="detail-nav__dir font-mono"><span style={{ transform: 'scaleX(-1)', display: 'inline-flex' }}><IconArrow size={12} /></span> Previous</span>
-              <span className="detail-nav__name font-head">{p.prev.label}</span>
-            </button>
-          ) : <span />}
-          {p.next ? (
-            <button className="pressable detail-nav__btn detail-nav__btn--next" onClick={() => navigate(p.next!.to)} aria-label={`Next: ${p.next.label}`}>
-              <span className="detail-nav__dir font-mono">Next <IconArrow size={12} /></span>
-              <span className="detail-nav__name font-head">{p.next.label}</span>
-            </button>
-          ) : <span />}
-        </div>
-
         {p.extra}
 
         {/* branding — a slight, tasteful touch at the foot of every detail page */}
@@ -134,6 +120,24 @@ export function DetailScaffold(p: DetailProps) {
           <a href={OFFICIAL_LINKS.pharosSite} target="_blank" rel="noopener noreferrer" className="detail-brand__pharos font-mono">Built on Pharos ↗</a>
         </div>
       </Container>
+
+      {/* icon-only prev / next pinned to the viewport sides — portalled out of the page-transition
+          wrapper so position:fixed anchors to the viewport (a transformed ancestor would break it) */}
+      {createPortal(
+        <>
+          {p.prev && (
+            <button className="pressable detail-side detail-side--prev" onClick={() => navigate(p.prev!.to)} title={`Previous · ${p.prev.label}`} aria-label={`Previous: ${p.prev.label}`}>
+              <span style={{ transform: 'scaleX(-1)', display: 'inline-flex' }}><IconArrow size={18} /></span>
+            </button>
+          )}
+          {p.next && (
+            <button className="pressable detail-side detail-side--next" onClick={() => navigate(p.next!.to)} title={`Next · ${p.next.label}`} aria-label={`Next: ${p.next.label}`}>
+              <IconArrow size={18} />
+            </button>
+          )}
+        </>,
+        document.body,
+      )}
     </div>
   );
 }

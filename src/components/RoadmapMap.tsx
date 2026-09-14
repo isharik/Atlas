@@ -10,7 +10,15 @@ const STEP_ICON: Record<string, ZoneIcon> = {
   Curator: 'curator', Strategy: 'strategy', Vault: 'vault',
   'Track Record': 'track', 'p{VAULT}': 'pvault', 'Performance Market': 'market',
 };
+const STEP_LOGO: Record<string, string> = { Pharos: 'pharos_network', Prosper: 'ProsperTicker' };
 function StepGlyph({ k, size = 18 }: { k: string; size?: number }) {
+  const handle = STEP_LOGO[k];
+  const [imgOk, setImgOk] = useState(Boolean(handle));
+  if (handle && imgOk) {
+    return <img src={`https://unavatar.io/x/${handle}?fallback=false`} alt={`${k} logo`} width={size} height={size}
+      onError={() => setImgOk(false)} loading="lazy"
+      style={{ width: size, height: size, borderRadius: size > 40 ? 16 : 6, objectFit: 'cover', display: 'block' }} />;
+  }
   if (STEP_ICON[k]) return <ZoneGlyph icon={STEP_ICON[k]} size={size} />;
   const P = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   // Pharos — a layered Layer-1 beacon: a broad base, a tower, a light burst.
@@ -46,21 +54,29 @@ function StepGlyph({ k, size = 18 }: { k: string; size?: number }) {
 const SPACING = 336;
 const spring = { type: 'spring' as const, stiffness: 260, damping: 32, mass: 0.9 };
 
+// a distinct entrance per stop — one signature move for each card
+const STEP_ENTERS = [
+  { opacity: 0, x: 72, filter: 'blur(10px)' },                 // in from right
+  { opacity: 0, scale: 0.9, filter: 'blur(10px)' },            // scale up
+  { opacity: 0, rotateY: -32, filter: 'blur(10px)' },          // turn in (Y)
+  { opacity: 0, y: 60, filter: 'blur(10px)' },                 // rise
+  { opacity: 0, x: -72, filter: 'blur(10px)' },                // in from left
+  { opacity: 0, rotateX: 30, y: 22, filter: 'blur(10px)' },    // tilt down (X)
+  { opacity: 0, scale: 1.08, filter: 'blur(12px)' },           // settle from big
+  { opacity: 0, y: -50, filter: 'blur(10px)' },                // drop in
+  { opacity: 0, rotateY: 26, x: 44, filter: 'blur(10px)' },    // twist in
+] as const;
+
 // Apple momentum projection (§6) — where a flick would come to rest.
 function project(v: number, decel = 0.9985) { return (v / 1000) * decel / (1 - decel); }
 
 export function RoadmapMap({ steps }: { steps: RoadStep[] }) {
   const reduce = useReducedMotion() ?? false;
   const [active, setActive] = useState(0);
-  const [dir, setDir] = useState(1);
   const n = steps.length;
   const cur = steps[active];
 
-  const go = useCallback((next: number) => setActive((prev) => {
-    const clamped = Math.max(0, Math.min(n - 1, next));
-    if (clamped !== prev) setDir(clamped > prev ? 1 : -1);
-    return clamped;
-  }), [n]);
+  const go = useCallback((next: number) => setActive(() => Math.max(0, Math.min(n - 1, next))), [n]);
 
   const stageRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -82,12 +98,12 @@ export function RoadmapMap({ steps }: { steps: RoadStep[] }) {
   const frac = n > 1 ? active / (n - 1) : 1;
   const s = cur;
 
-  // one focused card, entering from the direction of travel — a subtle 3D turn + blur, no clutter
+  // each stop has its own signature entrance — a different move every time you change card
   const enter = reduce
     ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.2 } }
     : {
-        initial: { opacity: 0, rotateY: dir * -9, y: 10, filter: 'blur(10px)' },
-        animate: { opacity: 1, rotateY: 0, y: 0, filter: 'blur(0px)' },
+        initial: STEP_ENTERS[active % STEP_ENTERS.length],
+        animate: { opacity: 1, x: 0, y: 0, rotateX: 0, rotateY: 0, scale: 1, filter: 'blur(0px)' },
         transition: spring,
       };
 
