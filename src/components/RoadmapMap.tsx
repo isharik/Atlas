@@ -1,8 +1,47 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion, type PanInfo } from 'framer-motion';
-import { IconArrow } from './ui/icons';
+import { IconArrow, ZoneGlyph } from './ui/icons';
+import type { ZoneIcon } from '@/data/ecosystem';
 
 export interface RoadStep { n: string; k: string; c: string; d: string }
+
+/** Per-step emblem — reuses the ecosystem glyphs, with three extras for the stages that have none. */
+const STEP_ICON: Record<string, ZoneIcon> = {
+  Curator: 'curator', Strategy: 'strategy', Vault: 'vault',
+  'Track Record': 'track', 'p{VAULT}': 'pvault', 'Performance Market': 'market',
+};
+function StepGlyph({ k, size = 18 }: { k: string; size?: number }) {
+  if (STEP_ICON[k]) return <ZoneGlyph icon={STEP_ICON[k]} size={size} />;
+  const P = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  // Pharos — a layered Layer-1 beacon: a broad base, a tower, a light burst.
+  if (k === 'Pharos') return (
+    <svg {...P}>
+      <path d="M6 20.5 18 20.5" opacity="0.5" />
+      <path d="M9 20.5 10 9.5 14 9.5 15 20.5 Z" fill="currentColor" fillOpacity="0.1" />
+      <path d="M9 20.5 10 9.5 14 9.5 15 20.5" />
+      <circle cx="12" cy="6.4" r="2.1" fill="currentColor" fillOpacity="0.22" /><circle cx="12" cy="6.4" r="2.1" />
+      <path d="M12 2.6v1.3M7.4 6.4H6M18 6.4h-1.4M8.6 3.5l.9.9M15.4 3.5l-.9.9" opacity="0.55" strokeWidth="1" />
+    </svg>
+  );
+  // Prosper — the compass/star brand mark.
+  if (k === 'Prosper') return (
+    <svg {...P}>
+      <circle cx="12" cy="12" r="9" strokeWidth="0.85" opacity="0.28" />
+      <path d="M12 3 13.6 10.4 21 12 13.6 13.6 12 21 10.4 13.6 3 12 10.4 10.4 Z" fill="currentColor" fillOpacity="0.14" />
+      <path d="M12 3 13.6 10.4 21 12 13.6 13.6 12 21 10.4 13.6 3 12 10.4 10.4 Z" />
+    </svg>
+  );
+  // Vault Shares — capital split into shares: a divided disc.
+  if (k === 'Vault Shares') return (
+    <svg {...P}>
+      <circle cx="12" cy="12" r="8.6" fill="currentColor" fillOpacity="0.08" /><circle cx="12" cy="12" r="8.6" />
+      <path d="M12 3.4V12l6 6" opacity="0.55" strokeWidth="1" />
+      <path d="M12 12 3.9 14.6" opacity="0.4" strokeWidth="1" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+  return <svg {...P}><circle cx="12" cy="12" r="7" /></svg>;
+}
 
 const SPACING = 336;
 const spring = { type: 'spring' as const, stiffness: 260, damping: 32, mass: 0.9 };
@@ -10,29 +49,18 @@ const spring = { type: 'spring' as const, stiffness: 260, damping: 32, mass: 0.9
 // Apple momentum projection (§6) — where a flick would come to rest.
 function project(v: number, decel = 0.9985) { return (v / 1000) * decel / (1 - decel); }
 
-/** Perspective "path" slot for a card at signed distance d from the active one. */
-function slot(d: number, reduce: boolean) {
-  const ad = Math.abs(d);
-  if (reduce) return { x: d * SPACING, y: 0, z: 0, rotateY: 0, scale: ad === 0 ? 1 : 0.86, opacity: ad > 2.4 ? 0 : 1 - Math.min(ad, 2) * 0.34, blur: 0, zi: 100 - Math.round(ad) };
-  return {
-    x: d * SPACING,
-    y: Math.min(ad, 3) * 14,               // gentle downward arc for distant stops
-    z: -Math.min(ad, 3) * 180,
-    rotateY: -Math.sign(d) * Math.min(ad, 2) * 26,
-    scale: Math.max(0.68, 1 - ad * 0.13),
-    opacity: ad > 2.6 ? 0 : 1 - Math.min(ad, 2.2) * 0.32,
-    blur: ad < 0.55 ? 0 : Math.min(ad * 1.7, 5.5),
-    zi: 100 - Math.round(ad * 10),
-  };
-}
-
 export function RoadmapMap({ steps }: { steps: RoadStep[] }) {
   const reduce = useReducedMotion() ?? false;
   const [active, setActive] = useState(0);
+  const [dir, setDir] = useState(1);
   const n = steps.length;
   const cur = steps[active];
 
-  const go = useCallback((next: number) => setActive(() => Math.max(0, Math.min(n - 1, next))), [n]);
+  const go = useCallback((next: number) => setActive((prev) => {
+    const clamped = Math.max(0, Math.min(n - 1, next));
+    if (clamped !== prev) setDir(clamped > prev ? 1 : -1);
+    return clamped;
+  }), [n]);
 
   const stageRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -47,10 +75,21 @@ export function RoadmapMap({ steps }: { steps: RoadStep[] }) {
 
   const onDragEnd = (_e: unknown, info: PanInfo) => {
     const projected = info.offset.x + project(info.velocity.x);
-    go(active + Math.round(-projected / SPACING));
+    if (projected < -SPACING * 0.4) go(active + 1);
+    else if (projected > SPACING * 0.4) go(active - 1);
   };
 
   const frac = n > 1 ? active / (n - 1) : 1;
+  const s = cur;
+
+  // one focused card, entering from the direction of travel — a subtle 3D turn + blur, no clutter
+  const enter = reduce
+    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.2 } }
+    : {
+        initial: { opacity: 0, rotateY: dir * -9, y: 10, filter: 'blur(10px)' },
+        animate: { opacity: 1, rotateY: 0, y: 0, filter: 'blur(0px)' },
+        transition: spring,
+      };
 
   return (
     <div>
@@ -61,59 +100,62 @@ export function RoadmapMap({ steps }: { steps: RoadStep[] }) {
           From strategy <em style={{ fontStyle: 'italic', color: 'var(--primary)' }}>to market.</em>
         </h1>
         <p className="font-display" style={{ fontSize: 14.5, lineHeight: 1.7, color: 'var(--mist)' }}>
-          Nine steps a private edge takes to become a transparent, investable market. Drag the path, or tap a station below.
+          Nine stops a private edge travels to become a transparent, investable market. Follow the map, swipe the card, or use the arrows.
         </p>
       </div>
 
-      {/* filmstrip */}
-      <div ref={stageRef} tabIndex={0} role="group" aria-label="Prosper journey — drag or use arrow keys" className="jmap-stage" style={{ outline: 'none' }}>
-        <motion.div drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.14} dragMomentum={false} onDragEnd={onDragEnd}
-          whileTap={{ cursor: 'grabbing' }} style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d', cursor: 'grab' }}>
-          {steps.map((s, i) => {
-            const o = slot(i - active, reduce);
-            const isActive = i === active;
-            return (
-              <motion.button key={s.k} onClick={() => (isActive ? null : go(i))} aria-label={`${s.n} ${s.k}`} aria-current={isActive}
-                animate={{ x: o.x, y: o.y, z: o.z, rotateY: o.rotateY, scale: o.scale, opacity: o.opacity, filter: `blur(${o.blur}px)` }}
-                transition={reduce ? { duration: 0.2 } : spring}
-                style={{ position: 'absolute', top: '50%', left: '50%', width: 440, height: 300, marginLeft: -220, marginTop: -150, zIndex: o.zi, transformStyle: 'preserve-3d', transformOrigin: '50% 50%', pointerEvents: o.opacity < 0.15 ? 'none' : 'auto', border: 'none', background: 'transparent', padding: 0, textAlign: 'left', cursor: isActive ? 'grab' : 'pointer' }}>
-                <div className="jmap-card" data-active={isActive ? 'true' : 'false'} style={{ ['--sc' as string]: s.c } as React.CSSProperties}>
-                  <div aria-hidden className="jmap-card__wash" style={{ background: `radial-gradient(120% 80% at 0% 0%, ${s.c}${isActive ? '20' : '00'}, transparent 60%)` }} />
-                  <div className="flex items-center gap-3" style={{ position: 'relative' }}>
-                    <span className="jmap-badge" style={{ color: s.c, borderColor: `${s.c}66`, background: `${s.c}14` }}>{s.n}</span>
-                    <span style={{ height: 1, flex: 1, background: `linear-gradient(90deg, ${s.c}55, transparent)` }} />
-                    <span className="font-mono" style={{ fontSize: 10, letterSpacing: '0.18em', color: 'var(--mist)' }}>{s.n} / {String(n).padStart(2, '0')}</span>
-                  </div>
-                  <div className="font-head" style={{ position: 'relative', fontSize: 'clamp(1.4rem,2.6vw,1.9rem)', fontWeight: 600, color: s.c, letterSpacing: '0.005em', marginTop: 18 }}>{s.k}</div>
-                  <p className="font-display" style={{ position: 'relative', fontSize: 14, lineHeight: 1.66, color: 'var(--text)', marginTop: 10, opacity: isActive ? 1 : 0, transition: 'opacity 240ms ease' }}>{s.d}</p>
-                </div>
-              </motion.button>
-            );
-          })}
+      {/* one focused journey card */}
+      <div ref={stageRef} tabIndex={0} role="group" aria-label="Prosper journey — swipe or use arrow keys" className="jmap-stage" style={{ outline: 'none' }}>
+        <motion.div drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.16} dragMomentum={false} onDragEnd={onDragEnd}
+          whileTap={{ cursor: 'grabbing' }} className="jmap-stage__drag">
+          <motion.div key={active} {...enter} className="jmap-focus">
+            <div className="jmap-card" data-active="true" style={{ ['--sc' as string]: s.c } as React.CSSProperties}>
+              <div aria-hidden className="jmap-card__wash" style={{ background: `radial-gradient(120% 90% at 8% 0%, ${s.c}2e, transparent 62%)` }} />
+              <div aria-hidden className="jmap-card__grid" />
+              <div aria-hidden className="jmap-card__mark" style={{ color: s.c }}><StepGlyph k={s.k} size={168} /></div>
+              <div className="jmap-card__head">
+                <span className="jmap-chip" style={{ color: s.c, borderColor: `${s.c}55`, background: `${s.c}16` }}><StepGlyph k={s.k} size={18} /></span>
+                <span className="jmap-badge" style={{ color: s.c, borderColor: `${s.c}66`, background: `${s.c}14` }}>{s.n}</span>
+                <span className="jmap-card__rule" style={{ background: `linear-gradient(90deg, ${s.c}66, transparent)` }} />
+                <span className="font-mono jmap-card__count">{s.n} / {String(n).padStart(2, '0')}</span>
+              </div>
+              <div className="font-head jmap-card__title" style={{ color: s.c }}>{s.k}</div>
+              <p className="font-display jmap-card__desc">{s.d}</p>
+              <div aria-hidden className="jmap-card__signal">
+                {[0.35, 0.6, 0.45, 0.78, 0.5, 0.9, 0.62].map((h, bi) => (
+                  <span key={bi} style={{ height: `${h * 100}%`, background: `linear-gradient(180deg, ${s.c}, ${s.c}44)` }} />
+                ))}
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       </div>
 
-      {/* numbered progress rail */}
-      <div className="jmap-rail">
-        <div className="jmap-rail__track">
-          <motion.div className="jmap-rail__fill" animate={{ scaleX: frac }} transition={{ type: 'spring', stiffness: 120, damping: 24 }} />
+      {/* the journey map — stations along a path */}
+      <div className="jmap-map">
+        <div className="jmap-map__cur font-mono">
+          <span style={{ color: s.c }}>{s.n}</span><span className="jmap-map__sep">/{String(n).padStart(2, '0')}</span>{s.k}
         </div>
-        <div className="jmap-rail__nodes">
-          {steps.map((s, i) => {
-            const on = i === active; const done = i < active;
-            return (
-              <button key={s.k} aria-label={`Go to ${s.k}`} onClick={() => go(i)} className="pressable jmap-node" data-on={on ? 'true' : 'false'}
-                style={{ ['--sc' as string]: s.c } as React.CSSProperties} title={s.k}>
-                <span className="jmap-node__dot" data-state={on ? 'on' : done ? 'done' : 'off'} />
-              </button>
-            );
-          })}
+        <div className="jmap-rail">
+          <div className="jmap-rail__track">
+            <motion.div className="jmap-rail__fill" animate={{ scaleX: frac }} transition={{ type: 'spring', stiffness: 130, damping: 26 }} />
+          </div>
+          <div className="jmap-rail__nodes">
+            {steps.map((st, i) => {
+              const on = i === active; const done = i < active;
+              return (
+                <button key={st.k} aria-label={`Go to ${st.k}`} onClick={() => go(i)} className="pressable jmap-node" data-on={on ? 'true' : 'false'}
+                  style={{ ['--sc' as string]: st.c } as React.CSSProperties} title={st.k}>
+                  <span className="jmap-node__dot" data-state={on ? 'on' : done ? 'done' : 'off'} />
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-3" style={{ marginTop: 22 }}>
+      <div className="flex items-center justify-center gap-3" style={{ marginTop: 20 }}>
         <button aria-label="Previous" onClick={() => go(active - 1)} disabled={active === 0} className="pressable jmap-arrow"><span style={{ transform: 'scaleX(-1)', display: 'inline-flex' }}><IconArrow size={16} /></span></button>
-        <span className="font-mono" style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--mist)', minWidth: 120, textAlign: 'center' }}>{cur.k}</span>
         <button aria-label="Next" onClick={() => go(active + 1)} disabled={active === n - 1} className="pressable jmap-arrow"><IconArrow size={16} /></button>
       </div>
     </div>

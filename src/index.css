@@ -414,14 +414,52 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* ── Journey — "The Path" filmstrip ── */
+/* ── Programs — clickable cards ── */
+.prog-link {
+  display: block;
+  height: 100%;
+  text-decoration: none;
+  border-radius: 12px;
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.prog-link:active { transform: scale(0.985); }
+.prog-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--emerald-glow);
+  transition: color 180ms ease;
+}
+.prog-cta__arrow {
+  display: inline-flex;
+  transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .prog-link:hover .prog-cta__arrow { transform: translateX(4px); }
+  .prog-link:hover .prog-cta { color: var(--emerald-bright, #48e8ac); }
+}
+
+/* ── Journey — focused card + map ── */
 .jmap-stage {
   position: relative;
-  height: 372px;
+  height: 336px;
   margin-top: 30px;
-  perspective: 1500px;
-  perspective-origin: 50% 44%;
+  perspective: 1400px;
+  perspective-origin: 50% 46%;
 }
+.jmap-stage__drag { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; cursor: grab; }
+.jmap-stage__drag:active { cursor: grabbing; }
+.jmap-focus { width: min(720px, 100%); height: 300px; transform-style: preserve-3d; will-change: transform, opacity, filter; }
+.jmap-map { max-width: 720px; margin: 30px auto 0; }
+.jmap-map__cur {
+  text-align: center; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text); margin-bottom: 16px; display: flex; align-items: baseline; justify-content: center; gap: 8px;
+}
+.jmap-map__sep { color: rgba(198, 210, 202, 0.5); margin-right: 4px; }
+.jmap-map .jmap-rail { margin-top: 0; }
 .jmap-card {
   position: relative;
   width: 100%;
@@ -451,6 +489,44 @@ body {
   box-shadow: 0 34px 90px -26px color-mix(in srgb, var(--sc) 42%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .jmap-card__wash { position: absolute; inset: 0; pointer-events: none; transition: background 240ms ease; }
+/* faint blueprint grid texture */
+.jmap-card__grid {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+  background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 34px 34px;
+  -webkit-mask-image: radial-gradient(120% 100% at 100% 100%, #000, transparent 70%);
+  mask-image: radial-gradient(120% 100% at 100% 100%, #000, transparent 70%);
+}
+/* large themed emblem watermark, low and to the right */
+.jmap-card__mark {
+  position: absolute; right: -14px; bottom: -22px; pointer-events: none;
+  opacity: 0.09; filter: drop-shadow(0 0 22px currentColor);
+  transition: opacity 300ms var(--ease-out2), transform 400ms var(--ease-out2);
+  transform: rotate(-6deg);
+}
+.jmap-card[data-active='true'] .jmap-card__mark { opacity: 0.16; transform: rotate(0deg); }
+.jmap-card__head { position: relative; display: flex; align-items: center; gap: 12px; }
+.jmap-chip {
+  width: 38px; height: 38px; display: grid; place-items: center; flex: none;
+  border-radius: 11px; border: 1px solid;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.jmap-card__rule { height: 1px; flex: 1; }
+.jmap-card__count { font-size: 10px; letter-spacing: 0.18em; color: var(--mist); flex: none; }
+.jmap-card__title {
+  position: relative; margin-top: 20px;
+  font-size: clamp(1.4rem, 2.6vw, 1.95rem); font-weight: 600; letter-spacing: 0.005em; line-height: 1.05;
+}
+.jmap-card__desc {
+  position: relative; margin-top: 11px; font-size: 14px; line-height: 1.66; color: var(--text);
+  transition: opacity 260ms var(--ease-out2);
+}
+/* themed signal bars pinned to the card foot */
+.jmap-card__signal {
+  position: absolute; left: 30px; bottom: 24px; display: flex; align-items: flex-end; gap: 5px;
+  height: 26px; width: 92px; pointer-events: none;
+}
+.jmap-card__signal span { flex: 1; border-radius: 2px 2px 1px 1px; transition: opacity 260ms ease, height 320ms var(--ease-out2); }
 .jmap-badge {
   width: 46px;
   height: 46px;

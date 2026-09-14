@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Container, Kicker, StatusPill } from '@/components/PageBits';
 import { TiltCard } from '@/components/TiltCard';
+import { IconArrow } from '@/components/ui/icons';
 import { PROGRAMS, PARTNERS } from '@/data/ecosystem';
 
 const ease = [0.23, 1, 0.32, 1] as [number, number, number, number];
@@ -20,18 +21,33 @@ export function Programs() {
         </motion.p>
 
         <motion.div variants={{ show: { transition: { staggerChildren: 0.08 } } }} initial="hidden" whileInView="show" viewport={viewport} className="grid-cards" style={{ marginTop: 40 }}>
-          {PROGRAMS.map((p) => (
-            <motion.div key={p.name} variants={rise}>
-              <TiltCard max={5} accent="rgba(56,224,160,0.12)" style={{ padding: 24, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(15,22,18,0.5)', height: '100%' }}>
+          {PROGRAMS.map((p) => {
+            const card = (
+              <TiltCard max={5} accent="rgba(56,224,160,0.12)" style={{ padding: 24, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(15,22,18,0.5)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
                   <span className="font-head" style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-hi)' }}>{p.name}</span>
                   <StatusPill label={p.status} tone={p.status === 'Live' ? 'emerald' : 'mute'} />
                 </div>
                 {p.reward && <div className="font-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--primary)', marginBottom: 8 }}>{p.reward}</div>}
-                <p className="font-display" style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--mist)', margin: 0 }}>{p.detail}</p>
+                <p className="font-display" style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--mist)', margin: 0, flex: 1 }}>{p.detail}</p>
+                {p.href && (
+                  <span className="prog-cta font-mono" style={{ marginTop: 16 }}>
+                    {p.hrefLabel ?? 'Learn more'}
+                    <span className="prog-cta__arrow"><IconArrow size={13} /></span>
+                  </span>
+                )}
               </TiltCard>
-            </motion.div>
-          ))}
+            );
+            return (
+              <motion.div key={p.name} variants={rise}>
+                {p.href ? (
+                  <a href={p.href} target="_blank" rel="noopener noreferrer" className="prog-link" aria-label={`${p.name} — ${p.hrefLabel ?? 'open link'}`}>
+                    {card}
+                  </a>
+                ) : card}
+              </motion.div>
+            );
+          })}
         </motion.div>
 
         <motion.div variants={{ show: { transition: { staggerChildren: 0.1 } } }} initial="hidden" whileInView="show" viewport={viewport} style={{ marginTop: 64 }}>

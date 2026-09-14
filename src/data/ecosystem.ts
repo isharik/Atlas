@@ -195,15 +195,19 @@ export interface Program {
   status: ProgramStatus;
   detail: string;
   reward?: string;
+  href?: string;
+  hrefLabel?: string;
 }
 
-/** Real programs Prosper has announced. */
+/** Real programs Prosper has announced. Links point to verified destinations. */
 export const PROGRAMS: Program[] = [
   {
     name: 'Founding Curator Cohort',
     status: 'Closed',
     detail:
       'The first Curators onboard to launch an on-chain Vault, build a track record and earn fees. Applications ran Aug 2026.',
+    href: 'https://forms.gle/cdCwCSdnNrCaAa35A',
+    hrefLabel: 'Become a Curator',
   },
   {
     name: 'Ambassador Program',
@@ -211,11 +215,15 @@ export const PROGRAMS: Program[] = [
     reward: '20,000 $PROS',
     detail:
       'For storytellers, educators and community leaders. Early access for Pharos storytellers, with bi-weekly rewards.',
+    href: 'https://x.com/ProsperTicker',
+    hrefLabel: 'Apply via @ProsperTicker',
   },
   {
     name: 'Scholar Campaign',
     status: 'Live',
     detail: 'Learn the foundations of on-chain strategy markets — Vault Shares, p{VAULT} and bonding curves — on Layer3.',
+    href: 'https://app.layer3.xyz',
+    hrefLabel: 'Start on Layer3',
   },
 ];
 

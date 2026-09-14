@@ -47,115 +47,66 @@ function FitParent() {
 }
 
 /**
- * The Prosper core — a solid, faceted value-core caught inside a slow wireframe shell.
- * Reads as a real 3D object with depth: a glowing gold heart, a counter-rotating emerald
- * lattice around it, a tilted gold meridian ring, and a scatter of light points. A visual
- * anchor with mass, not a flat diagram.
+ * The Prosper core — a black hole. A dark event horizon ringed by a bright photon rim and a
+ * swirling gold→emerald accretion disk in the orbital plane. Self-lit and always turning: the
+ * gravitational well the whole system falls toward.
  */
 function Core() {
-  const heart = useRef<THREE.Mesh>(null!);
-  const shell = useRef<THREE.Group>(null!);
-  const meridian = useRef<THREE.Group>(null!);
-
-  const pointPos = useMemo(() => {
-    const N = 46;
-    const gAng = Math.PI * (3 - Math.sqrt(5));
-    const arr = new Float32Array(N * 3);
-    for (let i = 0; i < N; i++) {
-      const y = 1 - (i / (N - 1)) * 2;
-      const r = Math.sqrt(1 - y * y);
-      const th = gAng * i;
-      const R = 1.5;
-      arr[i * 3] = Math.cos(th) * r * R;
-      arr[i * 3 + 1] = y * R;
-      arr[i * 3 + 2] = Math.sin(th) * r * R;
-    }
-    return arr;
-  }, []);
-
-  const shellEdges = useMemo(() => new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.5, 1)), []);
-
+  const disk = useRef<THREE.Group>(null!);
+  const halo = useRef<THREE.Mesh>(null!);
   useFrame((state, dt) => {
     const d = Math.min(dt, 0.05);
-    const reduce = prefersReduced();
-    if (heart.current) {
-      const s = reduce ? 1 : 1 + Math.sin(state.clock.elapsedTime * 0.9) * 0.025; // faint breathing
-      heart.current.scale.setScalar(s);
-      if (!reduce) heart.current.rotation.y += d * 0.14;
-    }
-    if (shell.current && !reduce) { shell.current.rotation.y -= d * 0.07; shell.current.rotation.x = 0.3; }
-    if (meridian.current && !reduce) meridian.current.rotation.z += d * 0.11;
+    if (disk.current && !prefersReduced()) disk.current.rotation.y += d * 0.5; // accretion swirl
+    if (halo.current) { const s = prefersReduced() ? 1 : 1 + Math.sin(state.clock.elapsedTime * 0.7) * 0.03; halo.current.scale.setScalar(s); }
   });
-
+  const flat: [number, number, number] = [-Math.PI / 2, 0, 0];
+  const DS = THREE.DoubleSide, ADD = THREE.AdditiveBlending;
   return (
     <group position={CENTER}>
-      {/* glowing faceted heart */}
-      <mesh ref={heart}>
-        <icosahedronGeometry args={[0.6, 0]} />
-        <meshStandardMaterial color={GOLD} emissive={GOLD} emissiveIntensity={0.55} metalness={0.9} roughness={0.25} flatShading />
-      </mesh>
-      {/* inner glass halo around the heart */}
-      <mesh>
-        <icosahedronGeometry args={[0.9, 0]} />
-        <meshStandardMaterial color={EMERALD_GLOW} emissive={EMERALD} emissiveIntensity={0.3} metalness={0.2} roughness={0.1} transparent opacity={0.12} depthWrite={false} flatShading />
-      </mesh>
-      {/* counter-rotating wireframe lattice shell */}
-      <group ref={shell}>
-        <lineSegments geometry={shellEdges}>
-          <lineBasicMaterial color={EMERALD_GLOW} transparent opacity={0.4} depthWrite={false} blending={THREE.AdditiveBlending} />
-        </lineSegments>
-        <points>
-          <bufferGeometry><bufferAttribute attach="attributes-position" args={[pointPos, 3]} count={pointPos.length / 3} /></bufferGeometry>
-          <pointsMaterial size={0.05} color={'#8cf0c8'} transparent opacity={0.9} depthWrite={false} blending={THREE.AdditiveBlending} sizeAttenuation />
-        </points>
+      {/* event horizon — the dark heart, and a soft shadow just outside it */}
+      <mesh><sphereGeometry args={[0.6, 48, 48]} /><meshBasicMaterial color={'#04070a'} /></mesh>
+      <mesh><sphereGeometry args={[0.74, 48, 48]} /><meshBasicMaterial color={'#04070a'} transparent opacity={0.5} depthWrite={false} /></mesh>
+      {/* photon ring — the bright rim of the hole */}
+      <mesh rotation={flat}><ringGeometry args={[0.62, 0.71, 140]} /><meshBasicMaterial color={'#fff1d2'} transparent opacity={0.95} side={DS} depthWrite={false} blending={ADD} /></mesh>
+      {/* accretion disk — concentric glow bands, gold inside → emerald out */}
+      <mesh rotation={flat}><ringGeometry args={[0.73, 1.06, 140]} /><meshBasicMaterial color={GOLD} transparent opacity={0.34} side={DS} depthWrite={false} blending={ADD} /></mesh>
+      <mesh rotation={flat}><ringGeometry args={[1.06, 1.5, 140]} /><meshBasicMaterial color={EMERALD_GLOW} transparent opacity={0.2} side={DS} depthWrite={false} blending={ADD} /></mesh>
+      <mesh ref={halo} rotation={flat}><ringGeometry args={[1.5, 2.15, 140]} /><meshBasicMaterial color={EMERALD} transparent opacity={0.09} side={DS} depthWrite={false} blending={ADD} /></mesh>
+      {/* swirling hot arcs — the disk turning */}
+      <group ref={disk}>
+        <mesh rotation={flat}><ringGeometry args={[0.8, 1.22, 96, 1, 0, 1.25]} /><meshBasicMaterial color={'#ffe6ac'} transparent opacity={0.5} side={DS} depthWrite={false} blending={ADD} /></mesh>
+        <mesh rotation={flat}><ringGeometry args={[0.92, 1.4, 96, 1, Math.PI, 1.0]} /><meshBasicMaterial color={'#7df0c4'} transparent opacity={0.4} side={DS} depthWrite={false} blending={ADD} /></mesh>
       </group>
-      {/* tilted gold meridian ring, spinning in its own plane */}
-      <group ref={meridian} rotation={[Math.PI * 0.32, 0, 0]}>
-        <mesh><torusGeometry args={[1.72, 0.018, 12, 160]} /><meshStandardMaterial color={GOLD} emissive={GOLD_DEEP} emissiveIntensity={0.6} metalness={1} roughness={0.28} /></mesh>
-      </group>
-
-      <pointLight position={[1.6, 1.2, 2]} intensity={1.3} distance={8} color={GOLD} />
-      <pointLight position={[-1.4, -0.6, -1]} intensity={0.8} distance={6} color={EMERALD} />
     </group>
   );
 }
 
-/** Orbital system — thin, precise rings with a clear hierarchy + travelling teal points. */
+/** A single dashed orbit path (a solar-system line), optionally sitting on a funnel curve. */
+function dashedLoop(radius: number, o: { color: string; opacity: number; dash?: number; gap?: number; y?: number }): THREE.Line {
+  const seg = Math.max(140, Math.round(radius * 46));
+  const pts: THREE.Vector3[] = [];
+  const yy = o.y ?? 0;
+  for (let i = 0; i <= seg; i++) { const a = (i / seg) * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * radius, yy, Math.sin(a) * radius)); }
+  const g = new THREE.BufferGeometry().setFromPoints(pts);
+  const m = new THREE.LineDashedMaterial({ color: new THREE.Color(o.color), transparent: true, opacity: o.opacity, dashSize: o.dash ?? 0.16, gapSize: o.gap ?? 0.12, depthWrite: false, blending: THREE.AdditiveBlending });
+  const line = new THREE.Line(g, m); line.computeLineDistances(); return line;
+}
+
+/** Orbital system — thin dashed solar-system paths, plus a wormhole funnel dipping toward the hole. */
 function Orbits() {
-  const dots = useRef<THREE.InstancedMesh>(null!);
-  const dummy = useMemo(() => new THREE.Object3D(), []);
-  const count = 6;
-  useFrame((state) => {
-    if (!dots.current) return;
-    const t = prefersReduced() ? 0 : state.clock.elapsedTime * 0.055;
-    for (let i = 0; i < count; i++) {
-      const a = (i / count + t) * Math.PI * 2;
-      dummy.position.set(CENTER.x + Math.cos(a) * RING, 0.02, CENTER.z + Math.sin(a) * RING);
-      dummy.scale.setScalar(0.07);
-      dummy.updateMatrix();
-      dots.current.setMatrixAt(i, dummy.matrix);
-    }
-    dots.current.instanceMatrix.needsUpdate = true;
-  });
-  const flat = [-Math.PI / 2, 0, 0] as [number, number, number];
-  // Additive glow so the lines read as light — they never wash out or vanish edge-on while the system turns.
-  return (
-    <group>
-      {/* inner guide ring */}
-      <mesh position={CENTER} rotation={flat}><torusGeometry args={[2.9, 0.008, 12, 220]} /><meshBasicMaterial color={GOLD_DEEP} transparent opacity={0.24} depthWrite={false} blending={THREE.AdditiveBlending} /></mesh>
-      {/* main orbit — broad soft aura halo (the glow) */}
-      <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING, 0.12, 16, 240]} /><meshBasicMaterial color={EMERALD_GLOW} transparent opacity={0.1} depthWrite={false} blending={THREE.AdditiveBlending} /></mesh>
-      {/* main orbit — mid glow */}
-      <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING, 0.05, 16, 300]} /><meshBasicMaterial color={EMERALD_GLOW} transparent opacity={0.22} depthWrite={false} blending={THREE.AdditiveBlending} /></mesh>
-      {/* main orbit — crisp bright core line (the path the nodes ride) */}
-      <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING, 0.02, 16, 360]} /><meshBasicMaterial color={'#c9ffe9'} transparent opacity={0.75} depthWrite={false} blending={THREE.AdditiveBlending} /></mesh>
-      {/* outer boundary — a darker, smooth gold ring with a faint aura (high segment count = no breakage) */}
-      <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING + 1.8, 0.07, 16, 300]} /><meshBasicMaterial color={GOLD} transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} /></mesh>
-      <mesh position={CENTER} rotation={flat}><torusGeometry args={[RING + 1.8, 0.015, 18, 420]} /><meshBasicMaterial color={GOLD_DEEP} transparent opacity={0.6} depthWrite={false} /></mesh>
-      {/* travelling glints along the path */}
-      <instancedMesh ref={dots} args={[undefined, undefined, count]}><sphereGeometry args={[1, 10, 10]} /><meshBasicMaterial color={'#b9ffe4'} transparent opacity={0.95} depthWrite={false} blending={THREE.AdditiveBlending} /></instancedMesh>
-    </group>
-  );
+  const lines = useMemo(() => {
+    const arr: THREE.Line[] = [];
+    // wormhole funnel — concentric dashed rings dipping down toward the black hole
+    const funnelY = (r: number) => -Math.pow(Math.max(0, 1 - r / RING), 1.5) * 1.5;
+    [4.5, 3.85, 3.2, 2.6, 2.05].forEach((r, i) => arr.push(dashedLoop(r, { color: '#3fdca0', opacity: 0.14 + i * 0.03, dash: 0.11, gap: 0.15, y: funnelY(r) })));
+    // main node orbit — the path the elements ride
+    arr.push(dashedLoop(RING, { color: '#8bf0c8', opacity: 0.9, dash: 0.2, gap: 0.13 }));
+    // outer solar-system orbits
+    arr.push(dashedLoop(RING + 1.5, { color: '#c9a24b', opacity: 0.3, dash: 0.16, gap: 0.2 }));
+    arr.push(dashedLoop(RING + 3.0, { color: '#c9a24b', opacity: 0.14, dash: 0.12, gap: 0.28 }));
+    return arr;
+  }, []);
+  return <group>{lines.map((l, i) => <primitive key={i} object={l} />)}</group>;
 }
 
 /** Distinct 3D emblem per node — each stage of the journey gets its own object, not a shared chart. */
@@ -330,13 +281,14 @@ export function AtlasHero({ className, style }: { className?: string; style?: Re
   return (
     <div className={className} style={{ WebkitMaskImage: mask, maskImage: mask, ...style }}>
       {/* frameloop stays 'always' so the system keeps spinning — browsers already throttle rAF in a backgrounded tab */}
-      <Canvas frameloop="always" dpr={[1, 1.4]} gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 42, near: 0.1, far: 120, position: [3.2, 6.6, 13.2] }}>
+      <Canvas frameloop="always" dpr={[1, 2]} gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 42, near: 0.1, far: 120, position: [3.2, 6.6, 13.2] }}>
         <FitParent />
         <Suspense fallback={null}>
           <Scene onOpen={open} />
         </Suspense>
-        <EffectComposer enableNormalPass={false} multisampling={0}>
-          <Bloom intensity={0.62} luminanceThreshold={0.5} luminanceSmoothing={0.9} mipmapBlur />
+        {/* multisampling 8 = HD anti-aliased edges through the postprocessing pass (canvas AA doesn't reach the composer) */}
+        <EffectComposer enableNormalPass={false} multisampling={8}>
+          <Bloom intensity={0.6} luminanceThreshold={0.52} luminanceSmoothing={0.9} mipmapBlur />
         </EffectComposer>
       </Canvas>
     </div>
