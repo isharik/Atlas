@@ -79,12 +79,12 @@ function Core() {
     const d = Math.min(dt, 0.05);
     const reduce = prefersReduced();
     if (heart.current) {
-      const s = reduce ? 1 : 1 + Math.sin(state.clock.elapsedTime * 1.1) * 0.035; // gentle breathing
+      const s = reduce ? 1 : 1 + Math.sin(state.clock.elapsedTime * 0.9) * 0.025; // faint breathing
       heart.current.scale.setScalar(s);
-      if (!reduce) heart.current.rotation.y += d * 0.28;
+      if (!reduce) heart.current.rotation.y += d * 0.14;
     }
-    if (shell.current && !reduce) { shell.current.rotation.y -= d * 0.12; shell.current.rotation.x = 0.3; }
-    if (meridian.current && !reduce) meridian.current.rotation.z += d * 0.2;
+    if (shell.current && !reduce) { shell.current.rotation.y -= d * 0.07; shell.current.rotation.x = 0.3; }
+    if (meridian.current && !reduce) meridian.current.rotation.z += d * 0.11;
   });
 
   return (
@@ -229,8 +229,8 @@ function Emblem({ icon, color, hover }: { icon: string; color: THREE.Color; hove
   }
 }
 
-/** Per-emblem idle spin — coins flip briskly, figures/charts turn slowly for readability. */
-const SPIN: Record<string, number> = { pvault: 0.9, strategy: 0.5, vault: 0.35, track: 0.3, market: 0.22, curator: 0.2 };
+/** Per-emblem idle spin — gentle, so the whole system stays calm; the coin turns a touch more. */
+const SPIN: Record<string, number> = { pvault: 0.32, strategy: 0.16, vault: 0.13, track: 0.15, market: 0.12, curator: 0.12 };
 
 function AtlasNode({ zone, angle, onOpen }: { zone: ZoneMeta; angle: number; onOpen: () => void }) {
   const grp = useRef<THREE.Group>(null!);
@@ -240,15 +240,14 @@ function AtlasNode({ zone, angle, onOpen }: { zone: ZoneMeta; angle: number; onO
   const color = useMemo(() => new THREE.Color(zone.color), [zone.color]);
   const pos = useMemo(() => new THREE.Vector3(CENTER.x + Math.cos(angle) * RING, 0, CENTER.z + Math.sin(angle) * RING), [angle]);
 
-  useFrame((state, dt) => {
+  useFrame((_state, dt) => {
     if (!grp.current || !island.current) return;
-    const reduce = prefersReduced();
-    const bob = reduce ? 0 : Math.sin(state.clock.elapsedTime * 0.7 + angle) * 0.04;
-    grp.current.position.y = pos.y + bob;
+    // no vertical bob — nodes sit steady on the orbit plane so the scene reads clean
+    grp.current.position.y = pos.y;
     const target = hover ? 1.1 : 1;
     const s = island.current.scale.x + (target - island.current.scale.x) * Math.min(1, dt * 9);
     island.current.scale.setScalar(s);
-    if (emblem.current && !reduce) emblem.current.rotation.y += Math.min(dt, 0.05) * (SPIN[zone.icon] ?? 0.3);
+    if (emblem.current && !prefersReduced()) emblem.current.rotation.y += Math.min(dt, 0.05) * (SPIN[zone.icon] ?? 0.14);
   });
 
   const enter = () => { setHover(true); document.body.style.cursor = 'pointer'; };
@@ -272,7 +271,7 @@ function AtlasNode({ zone, angle, onOpen }: { zone: ZoneMeta; angle: number; onO
         </group>
       </group>
 
-      <Html center distanceFactor={11} position={[0, 1.5, 0]} zIndexRange={[20, 0]}>
+      <Html center distanceFactor={9.5} position={[0, 1.5, 0]} zIndexRange={[20, 0]}>
         <button onMouseEnter={enter} onMouseLeave={leave} onClick={onOpen} aria-label={`Open ${zone.label}`} data-hover={hover ? 'true' : 'false'} className="atlas-node-card"
           style={{ ['--nc' as string]: zone.color } as React.CSSProperties}>
           <span className="atlas-node-card__icon"><ZoneGlyph icon={zone.icon} size={15} /></span>
@@ -289,9 +288,10 @@ function AtlasNode({ zone, angle, onOpen }: { zone: ZoneMeta; angle: number; onO
 function Scene({ onOpen }: { onOpen: (id: ZoneId) => void }) {
   const spin = useRef<THREE.Group>(null!);
   useFrame((state, dt) => {
-    // camera is fixed — just aim it once and keep the model steadily auto-spinning
+    // camera is fixed — aim it, then keep the whole system revolving. This is the centrepiece,
+    // so it always spins (even under reduced-motion): a single slow, smooth rotation, no jitter.
     state.camera.lookAt(CAM_LOOK);
-    if (spin.current && !prefersReduced()) spin.current.rotation.y += Math.min(dt, 0.05) * 0.12;
+    if (spin.current) spin.current.rotation.y += Math.min(dt, 0.05) * 0.26;
   });
   return (
     <group>
@@ -317,23 +317,10 @@ export function AtlasHero({ className, style }: { className?: string; style?: Re
   const open = (id: ZoneId) => { click(); navigate(`/zone/${id}`); };
   const mask = 'radial-gradient(130% 130% at 70% 48%, #000 60%, rgba(0,0,0,0.5) 80%, transparent 95%)';
 
-  // only render the scene while it's actually on screen and the tab is visible
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const onScreen = useRef(true);
-  const [active, setActive] = useState(true);
-  useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    const apply = () => setActive(onScreen.current && document.visibilityState === 'visible');
-    const io = new IntersectionObserver(([e]) => { onScreen.current = e.isIntersecting; apply(); }, { threshold: 0.04 });
-    io.observe(el);
-    document.addEventListener('visibilitychange', apply);
-    return () => { io.disconnect(); document.removeEventListener('visibilitychange', apply); };
-  }, []);
-
   return (
-    <div ref={wrapRef} className={className} style={{ WebkitMaskImage: mask, maskImage: mask, ...style }}>
-      <Canvas frameloop={active ? 'always' : 'never'} dpr={[1, 1.4]} gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 42, near: 0.1, far: 120, position: [3.3, 10.2, 11] }}>
+    <div className={className} style={{ WebkitMaskImage: mask, maskImage: mask, ...style }}>
+      {/* frameloop stays 'always' so the system keeps spinning — browsers already throttle rAF in a backgrounded tab */}
+      <Canvas frameloop="always" dpr={[1, 1.4]} gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }} camera={{ fov: 42, near: 0.1, far: 120, position: [3.3, 12.2, 13.4] }}>
         <FitParent />
         <Suspense fallback={null}>
           <Scene onOpen={open} />
