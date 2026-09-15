@@ -55,25 +55,29 @@ export function Quiz() {
   };
   const restart = () => { click(); setI(0); setPicked(null); setScore(0); setDone(false); };
 
+  // score ≥ 5 → the "did well" card; below 5 → the alternate card
+  const cardBg = score >= 5 ? '/quiz_bg.png' : '/quiz2_bg.png';
   const shareSpec: ShareSpec = useMemo(() => ({
     eyebrow: 'Prosper Quiz · via Atlas',
     title: `${score} / ${total}`,
     accentWord: scoreLabel(score),
     minimal: true,
-    bgImage: '/quiz_bg.png',
-  }), [score, total]);
+    bgImage: cardBg,
+  }), [score, total, cardBg]);
   const shareCaption = `I scored ${score}/${total} on the Prosper quiz — "${scoreLabel(score)}". Think you can beat it?`;
 
-  // draw the result card as soon as the quiz is done
+  // draw the result card as soon as the quiz is done, loading the score-matched image
   useEffect(() => {
     if (!done) return;
     let cancelled = false;
     const render = () => { if (!cancelled && cardRef.current) drawCard(cardRef.current, shareSpec, bgRef.current); };
     (document as Document & { fonts?: FontFaceSet }).fonts?.ready.then(render);
-    render();
-    if (!bgRef.current) { const im = new Image(); im.onload = () => { bgRef.current = im; render(); }; im.src = '/quiz_bg.png'; }
+    if (!bgRef.current || !bgRef.current.src.endsWith(cardBg)) {
+      bgRef.current = null; render();
+      const im = new Image(); im.onload = () => { bgRef.current = im; render(); }; im.src = cardBg;
+    } else render();
     return () => { cancelled = true; };
-  }, [done, shareSpec]);
+  }, [done, shareSpec, cardBg]);
 
   const downloadCard = () => {
     click(); const c = cardRef.current; if (!c) return;
