@@ -681,7 +681,7 @@ body {
 .quiz-note { margin-top: 16px; font-size: 13px; line-height: 1.6; color: var(--mist); border-top: 1px solid var(--border); padding-top: 14px; }
 .quiz-result { text-align: center; }
 .quiz-resultcard { display: flex; flex-direction: column; align-items: center; }
-.quiz-cardframe { width: 100%; max-width: 620px; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 30px 70px -34px rgba(0, 0, 0, 0.85); }
+.quiz-cardframe { width: 100%; max-width: 620px; border-radius: 24px; overflow: hidden; box-shadow: 0 30px 70px -34px rgba(0, 0, 0, 0.85); }
 .quiz-score { font-size: clamp(3rem, 9vw, 5rem); font-weight: 700; color: var(--text-hi); line-height: 1; margin: 10px 0 4px; font-variant-numeric: tabular-nums; }
 .quiz-badge { font-size: 18px; font-weight: 600; color: var(--primary); letter-spacing: 0.02em; }
 .quiz-result__line { font-size: 14px; line-height: 1.6; color: var(--mist); max-width: 420px; margin: 12px auto 0; }

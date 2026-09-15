@@ -85,27 +85,35 @@ export function drawCard(canvas: HTMLCanvasElement, spec: ShareSpec, bgImg?: HTM
   g.addColorStop(0, PAL.bg1); g.addColorStop(1, PAL.bg2);
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
-  // minimal card — the image is the card; only a frame + the score on the bottom pane
+  // minimal card — the image IS the card; rounded corners, no frame, just the score on the bottom pane
   if (spec.minimal) {
-    if (hasImg) drawCover(ctx, bgImg!, 0, 0, W, H);
+    const R = 46;
+    ctx.clearRect(0, 0, W, H);                 // transparent outside the rounded shape
+    ctx.save();
+    roundRect(ctx, 0, 0, W, H, R); ctx.clip();
+    if (hasImg) drawCover(ctx, bgImg!, 0, 0, W, H); else { ctx.fillStyle = PAL.bg1; ctx.fillRect(0, 0, W, H); }
     // bottom pane so the score stays readable over any image
-    const pane = ctx.createLinearGradient(0, H - 190, 0, H);
-    pane.addColorStop(0, 'rgba(6,10,8,0)'); pane.addColorStop(0.5, 'rgba(6,10,8,0.6)'); pane.addColorStop(1, 'rgba(6,10,8,0.94)');
-    ctx.fillStyle = pane; ctx.fillRect(0, H - 190, W, 190);
-    // gold frame
-    ctx.strokeStyle = 'rgba(236,210,138,0.5)'; ctx.lineWidth = 2;
-    roundRect(ctx, 24, 24, W - 48, H - 48, 22); ctx.stroke();
-    // score on the bottom pane
+    const pane = ctx.createLinearGradient(0, H - 210, 0, H);
+    pane.addColorStop(0, 'rgba(6,10,8,0)'); pane.addColorStop(0.5, 'rgba(6,10,8,0.62)'); pane.addColorStop(1, 'rgba(6,10,8,0.95)');
+    ctx.fillStyle = pane; ctx.fillRect(0, H - 210, W, 210);
+    ctx.restore();
+
+    const lctx = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
     ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    ctx.font = '700 62px "Rajdhani", sans-serif'; ctx.fillStyle = PAL.text;
-    ctx.fillText(spec.title, W / 2, H - 78);
+    // label above the score
     if (spec.accentWord) {
-      ctx.font = '600 24px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.gold;
-      const lctx = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
-      if ('letterSpacing' in lctx) lctx.letterSpacing = '0.18em';
-      ctx.fillText(spec.accentWord.toUpperCase(), W / 2, H - 42);
+      ctx.font = '700 22px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.gold;
+      if ('letterSpacing' in lctx) lctx.letterSpacing = '0.32em';
+      ctx.fillText(spec.accentWord.toUpperCase(), W / 2 + 3, H - 92);
       if ('letterSpacing' in lctx) lctx.letterSpacing = '0px';
     }
+    // score — big, bold, with a soft glow for maximum legibility
+    ctx.save();
+    ctx.font = '800 92px "Archivo", system-ui, sans-serif';
+    ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 3;
+    ctx.fillStyle = PAL.text;
+    ctx.fillText(spec.title, W / 2, H - 38);
+    ctx.restore();
     ctx.textAlign = 'left';
     return;
   }
