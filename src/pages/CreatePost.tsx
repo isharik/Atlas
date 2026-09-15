@@ -1,9 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { motion, useMotionValue, useSpring, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Container, Kicker } from '@/components/PageBits';
 import { IconArrow, Compass } from '@/components/ui/icons';
 import { POST_KITS, POST_CATEGORIES } from '@/data/postkits';
+import { MemeStudio } from '@/components/poststudio/MemeCard';
+import { useAudio } from '@/audio/AudioProvider';
 
 const ease = [0.23, 1, 0.32, 1] as [number, number, number, number];
 const rise = { hidden: { opacity: 0, y: 16, filter: 'blur(4px)' }, show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease } } };
@@ -36,17 +38,33 @@ export function CreatePost() {
   };
   const onLeave = () => { mx.set(0); my.set(0); };
 
+  const { click } = useAudio();
+  const [mode, setMode] = useState<'topics' | 'quick'>('topics');
+
   return (
-    <div style={{ paddingTop: 92, paddingBottom: 56 }}>
+    <div style={{ paddingTop: 82, paddingBottom: 56 }}>
       <Container style={{ maxWidth: 1180 }}>
-        <div className="studio-split" onMouseMove={onMove} onMouseLeave={onLeave}>
+        {/* shared header + the divider between a normal post and a quick post */}
+        <div className="studio-head">
+          <Kicker>Post Studio</Kicker>
+          <motion.h1 className="font-display studio-head__title" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease }}>
+            Post about Prosper. <em style={{ fontStyle: 'italic', color: 'var(--primary)' }}>Via Atlas.</em>
+          </motion.h1>
+          <div className="studio-modes" role="tablist" aria-label="Post type">
+            <button role="tab" aria-selected={mode === 'topics'} onClick={() => { click(); setMode('topics'); }} className="pressable studio-mode" data-on={mode === 'topics' ? 'true' : 'false'}>Topics</button>
+            <button role="tab" aria-selected={mode === 'quick'} onClick={() => { click(); setMode('quick'); }} className="pressable studio-mode" data-on={mode === 'quick' ? 'true' : 'false'}>Quick post</button>
+          </div>
+        </div>
+
+        {mode === 'quick' ? (
+          <motion.div key="quick" initial={{ opacity: 0, y: 14, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 0.4, ease }}>
+            <MemeStudio />
+          </motion.div>
+        ) : (
+        <motion.div key="topics" initial={{ opacity: 0, y: 14, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 0.4, ease }} className="studio-split" onMouseMove={onMove} onMouseLeave={onLeave}>
           {/* left — the intro, with room to breathe */}
           <motion.aside className="studio-aside" initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } } }}>
-            <motion.div variants={rise}><Kicker>Post Studio</Kicker></motion.div>
-            <motion.h1 variants={rise} className="font-display studio-aside__title">
-              Post about Prosper. <em style={{ fontStyle: 'italic', color: 'var(--primary)' }}>Via Atlas.</em>
-            </motion.h1>
-            <motion.p variants={rise} className="font-display studio-aside__lead">
+            <motion.p variants={rise} className="font-display studio-aside__lead" style={{ marginTop: 0 }}>
               Pick a topic. Each one opens in its own space with a branded card and ready-to-post captions in three lengths — edit anything, then share. It’s yours.
             </motion.p>
             <motion.div variants={rise} className="studio-aside__foot font-mono">
@@ -87,7 +105,8 @@ export function CreatePost() {
               );
             })}
           </div>
-        </div>
+        </motion.div>
+        )}
       </Container>
     </div>
   );

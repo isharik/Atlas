@@ -432,6 +432,54 @@ body {
   .card-open:hover .card-open__arrow { transform: translateX(4px); }
 }
 
+/* ── Post Studio — header + mode toggle (normal post vs quick post) ── */
+.studio-head { margin-bottom: 22px; }
+.studio-head__title { font-weight: 300; font-size: clamp(1.8rem, 3.4vw, 2.6rem); color: var(--text-hi); margin: 10px 0 0; letter-spacing: -0.01em; line-height: 1.05; }
+.studio-modes { display: inline-flex; margin-top: 18px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: rgba(12, 18, 15, 0.5); }
+.studio-mode {
+  padding: 9px 20px; border: none; background: none; cursor: pointer; border-left: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--mist);
+  transition: color 180ms ease, background 200ms ease, transform 150ms var(--ease-out2);
+}
+.studio-mode:first-child { border-left: none; }
+.studio-mode:active { transform: scale(0.98); }
+.studio-mode[data-on='true'] { color: var(--bg, #0e1613); background: var(--primary); font-weight: 600; }
+@media (hover: hover) and (pointer: fine) { .studio-mode:not([data-on='true']):hover { color: var(--text-hi); background: rgba(18, 26, 21, 0.7); } }
+
+/* ── Post Studio V2 — quick / meme maker ── */
+.meme-studio { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 26px; align-items: start; }
+.meme-controls { display: flex; flex-direction: column; gap: 18px; }
+.meme-templates { display: flex; flex-wrap: wrap; gap: 7px; }
+.meme-tpl {
+  padding: 7px 12px; border-radius: 999px; cursor: pointer; border: 1px solid var(--border); background: rgba(15, 22, 18, 0.5);
+  font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em; color: var(--mist);
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 150ms var(--ease-out2);
+}
+.meme-tpl:active { transform: scale(0.96); }
+.meme-tpl[data-on='true'] { color: var(--bg, #0e1613); background: var(--primary); border-color: var(--primary); font-weight: 600; }
+@media (hover: hover) and (pointer: fine) { .meme-tpl:not([data-on='true']):hover { color: var(--text-hi); border-color: var(--border-strong); } }
+.meme-fields { display: flex; flex-direction: column; gap: 12px; }
+.meme-field { display: flex; flex-direction: column; gap: 6px; }
+.meme-field__label { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mist); }
+.meme-input {
+  width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; resize: vertical;
+  border: 1px solid var(--border); background: rgba(12, 18, 15, 0.55); color: var(--text); font-size: 13.5px; line-height: 1.5; outline: none;
+  transition: border-color 180ms ease;
+}
+.meme-input:focus { border-color: var(--border-strong); }
+.meme-input::placeholder { color: rgba(198, 210, 202, 0.45); }
+.meme-upload { display: flex; align-items: center; gap: 12px; }
+.meme-upload__btn { display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 999px; border: 1px dashed var(--border-strong); background: rgba(12, 18, 15, 0.4); color: var(--primary); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; transition: border-color 180ms ease, background 180ms ease; }
+.meme-upload__btn:hover { border-color: rgba(228, 200, 119, 0.5); background: rgba(228, 200, 119, 0.06); }
+.meme-upload__clear { background: none; border: none; cursor: pointer; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mist); }
+.meme-upload__clear:hover { color: var(--primary); }
+.meme-canvas { border-radius: 14px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 24px 60px -34px rgba(0, 0, 0, 0.8); }
+.meme-actions { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+@media (max-width: 860px) {
+  .meme-studio { grid-template-columns: 1fr; gap: 20px; }
+  .meme-preview { order: -1; }
+}
+
 /* ── Post Studio — split: intro on the left, cards on the right, interactive divider ── */
 .studio-split { display: grid; grid-template-columns: minmax(280px, 340px) 76px minmax(0, 1fr); align-items: start; margin-top: 6px; }
 .studio-aside { position: sticky; top: 96px; }
@@ -535,6 +583,94 @@ body {
   color: var(--mist); text-decoration: none; transition: color 180ms ease;
 }
 .home-pharos-link:hover { color: var(--primary); }
+
+/* ── Quiz ── */
+.quiz-progress { height: 3px; border-radius: 3px; background: rgba(234, 230, 218, 0.1); overflow: hidden; margin: 26px 0 20px; }
+.quiz-progress__fill { height: 100%; transform-origin: left; background: linear-gradient(90deg, #c9a24b, #38e0a0); border-radius: 3px; }
+.quiz-card {
+  padding: 24px 24px; border-radius: 18px; border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(16, 24, 20, 0.72), rgba(10, 15, 12, 0.85));
+  box-shadow: 0 24px 60px -34px rgba(0, 0, 0, 0.8);
+}
+.quiz-count { font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mist); }
+.quiz-q { font-size: clamp(1.15rem, 2.4vw, 1.5rem); font-weight: 600; color: var(--text-hi); line-height: 1.25; margin-bottom: 18px; }
+.quiz-options { display: flex; flex-direction: column; gap: 10px; }
+.quiz-option {
+  display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
+  padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); background: rgba(12, 18, 15, 0.5);
+  color: var(--text); font-size: 14px; line-height: 1.4;
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 140ms var(--ease-out2);
+}
+.quiz-option:disabled { cursor: default; }
+.quiz-option:not(:disabled):active { transform: scale(0.99); }
+.quiz-option__dot { width: 9px; height: 9px; border-radius: 999px; border: 1px solid var(--border-strong); flex: none; transition: background 180ms ease, border-color 180ms ease; }
+@media (hover: hover) and (pointer: fine) { .quiz-option[data-state='idle']:hover { border-color: var(--border-strong); background: rgba(18, 26, 21, 0.7); } }
+.quiz-option[data-state='right'] { border-color: color-mix(in srgb, var(--emerald-glow) 55%, transparent); background: color-mix(in srgb, var(--emerald-glow) 12%, transparent); color: var(--text-hi); }
+.quiz-option[data-state='right'] .quiz-option__dot { background: var(--emerald-glow); border-color: var(--emerald-glow); }
+.quiz-option[data-state='wrong'] { border-color: rgba(224, 122, 122, 0.5); background: rgba(224, 122, 122, 0.08); }
+.quiz-option[data-state='wrong'] .quiz-option__dot { background: #e07a7a; border-color: #e07a7a; }
+.quiz-option[data-state='dim'] { opacity: 0.5; }
+.quiz-note { margin-top: 16px; font-size: 13px; line-height: 1.6; color: var(--mist); border-top: 1px solid var(--border); padding-top: 14px; }
+.quiz-result { text-align: center; }
+.quiz-score { font-size: clamp(3rem, 9vw, 5rem); font-weight: 700; color: var(--text-hi); line-height: 1; margin: 10px 0 4px; font-variant-numeric: tabular-nums; }
+.quiz-badge { font-size: 18px; font-weight: 600; color: var(--primary); letter-spacing: 0.02em; }
+.quiz-result__line { font-size: 14px; line-height: 1.6; color: var(--mist); max-width: 420px; margin: 12px auto 0; }
+
+/* ── Glossary ── */
+.gloss-controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 22px; }
+.gloss-search {
+  display: inline-flex; align-items: center; gap: 9px; flex: 1 1 240px; max-width: 340px;
+  padding: 9px 14px; border-radius: 999px; border: 1px solid var(--border); background: rgba(12, 18, 15, 0.6); color: var(--mist);
+  transition: border-color 180ms ease;
+}
+.gloss-search:focus-within { border-color: var(--border-strong); }
+.gloss-search input { flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--text); font-size: 13px; }
+.gloss-search input::placeholder { color: rgba(198, 210, 202, 0.5); }
+.gloss-filters { display: flex; flex-wrap: wrap; gap: 7px; }
+.gloss-chip {
+  padding: 7px 13px; border-radius: 999px; cursor: pointer; border: 1px solid var(--border); background: rgba(15, 22, 18, 0.5);
+  font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mist);
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 160ms var(--ease-out2);
+}
+.gloss-chip:active { transform: scale(0.96); }
+.gloss-chip[data-on='true'] { color: var(--bg, #0e1613); background: var(--primary); border-color: var(--primary); font-weight: 600; }
+@media (hover: hover) and (pointer: fine) { .gloss-chip:not([data-on='true']):hover { color: var(--text-hi); border-color: var(--border-strong); } }
+/* equal grid — every card the same size, colour-coded by category */
+.gloss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(238px, 1fr)); gap: 14px; }
+.gloss-card {
+  position: relative; overflow: hidden; display: flex; flex-direction: column;
+  min-height: 162px; padding: 16px 16px 15px; border-radius: 16px;
+  border: 1px solid var(--border); text-decoration: none;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--c) 8%, rgba(16, 24, 20, 0.5)), rgba(11, 16, 13, 0.85));
+  transition: border-color 220ms var(--ease-out2), transform 220ms var(--ease-out2), box-shadow 220ms var(--ease-out2);
+}
+.gloss-card::before {
+  content: ''; position: absolute; left: 16px; right: 16px; top: 0; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--c), transparent 82%); opacity: 0.8; transition: opacity 220ms ease;
+}
+.gloss-card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.gloss-card__mono {
+  width: 34px; height: 34px; display: grid; place-items: center; flex: none;
+  border-radius: 10px; font-size: 16px; font-weight: 700; color: var(--c);
+  background: color-mix(in srgb, var(--c) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 32%, transparent);
+}
+.gloss-card__cat { font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c); border: 1px solid color-mix(in srgb, var(--c) 38%, transparent); border-radius: 999px; padding: 3px 8px; flex: none; }
+.gloss-card__term { font-size: 16px; font-weight: 600; color: var(--text-hi); line-height: 1.2; }
+.gloss-card__def {
+  font-size: 12.5px; line-height: 1.5; color: var(--mist); margin: 6px 0 0;
+  display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.gloss-card__link { margin-top: auto; padding-top: 12px; display: inline-flex; align-items: center; gap: 6px; font-size: 8.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--c); opacity: 0.65; transition: opacity 200ms ease; }
+.gloss-card__arrow { display: inline-flex; transition: transform 220ms var(--ease-out2); }
+.gloss-card:active { transform: scale(0.985); }
+@media (hover: hover) and (pointer: fine) {
+  .gloss-card:hover { border-color: color-mix(in srgb, var(--c) 42%, var(--border)); transform: translateY(-3px); box-shadow: 0 20px 40px -26px color-mix(in srgb, var(--c) 42%, transparent); }
+  .gloss-card:hover::before { opacity: 1; }
+  .gloss-card:hover .gloss-card__link { opacity: 1; }
+  .gloss-card:hover .gloss-card__arrow { transform: translateX(3px); }
+}
+@media (max-width: 480px) { .gloss-grid { grid-template-columns: 1fr; } }
 
 /* ── Allocator's Guide — Genesis strategy cards ── */
 .genesis-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }

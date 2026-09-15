@@ -10,6 +10,8 @@ import { Programs } from './pages/Programs';
 import { ProgramDetail } from './pages/ProgramDetail';
 import { Journey } from './pages/Journey';
 import { GuideDetail } from './pages/GuideDetail';
+import { Glossary } from './pages/Glossary';
+import { Quiz } from './pages/Quiz';
 import { Pharos } from './pages/Pharos';
 import { Faq } from './pages/Faq';
 import { Sandbox } from './pages/Sandbox';
@@ -40,6 +42,8 @@ export default function App() {
         <Route path="/journey" element={wrap(<Journey />)} />
         <Route path="/guide" element={<Navigate to="/guide/strategy-to-market" replace />} />
         <Route path="/guide/:slug" element={wrap(<GuideDetail />)} />
+        <Route path="/glossary" element={wrap(<Glossary />)} />
+        <Route path="/quiz" element={wrap(<Quiz />)} />
         <Route path="/sandbox" element={wrap(<Sandbox />)} />
         <Route path="/studio" element={wrap(<CuratorStudio />)} />
         <Route path="/tracker" element={wrap(<Tracker />)} />
