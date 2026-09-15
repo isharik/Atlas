@@ -85,35 +85,42 @@ export function drawCard(canvas: HTMLCanvasElement, spec: ShareSpec, bgImg?: HTM
   g.addColorStop(0, PAL.bg1); g.addColorStop(1, PAL.bg2);
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
-  // minimal card — the image IS the card; rounded corners, no frame, just the score on the bottom pane
+  // minimal card — the image IS the card; rounded corners, no frame.
+  // The score sits in a compact plate placed over the baked
+  // "PEOPLE × IDEAS × POSSIBILITIES" line (same spot on both backgrounds).
   if (spec.minimal) {
     const R = 46;
     ctx.clearRect(0, 0, W, H);                 // transparent outside the rounded shape
     ctx.save();
     roundRect(ctx, 0, 0, W, H, R); ctx.clip();
     if (hasImg) drawCover(ctx, bgImg!, 0, 0, W, H); else { ctx.fillStyle = PAL.bg1; ctx.fillRect(0, 0, W, H); }
-    // bottom pane so the score stays readable over any image
-    const pane = ctx.createLinearGradient(0, H - 220, 0, H);
-    pane.addColorStop(0, 'rgba(6,10,8,0)'); pane.addColorStop(0.5, 'rgba(6,10,8,0.62)'); pane.addColorStop(1, 'rgba(6,10,8,0.95)');
-    ctx.fillStyle = pane; ctx.fillRect(0, H - 220, W, 220);
+    ctx.restore();
+
+    // minimal plate — just wide enough to hide that one line; solid, dark
+    // emerald/gold so it blends into the background and reads as part of it.
+    const pw = 322, ph = 116, px = 743, py = 448;
+    const cx = px + pw / 2;
+    ctx.save();
+    roundRect(ctx, px, py, pw, ph, 18);
+    const pg = ctx.createLinearGradient(0, py, 0, py + ph);
+    pg.addColorStop(0, '#0e1613'); pg.addColorStop(1, '#0a0f0c');   // fully opaque, matches the art
+    ctx.fillStyle = pg; ctx.fill();
+    ctx.strokeStyle = 'rgba(236,210,138,0.42)'; ctx.lineWidth = 1.5; ctx.stroke();
+    // subtle emerald top edge for the Prosper feel
+    ctx.strokeStyle = 'rgba(72,232,172,0.14)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(px + 18, py + 1.5); ctx.lineTo(px + pw - 18, py + 1.5); ctx.stroke();
     ctx.restore();
 
     const lctx = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
     ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    // label above the score, with clear breathing room
     if (spec.accentWord) {
-      ctx.font = '700 20px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.gold;
-      if ('letterSpacing' in lctx) lctx.letterSpacing = '0.3em';
-      ctx.fillText(spec.accentWord.toUpperCase(), W / 2 + 3, H - 116);
+      ctx.font = '700 16px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.gold;
+      if ('letterSpacing' in lctx) lctx.letterSpacing = '0.26em';
+      ctx.fillText(spec.accentWord.toUpperCase(), cx + 2, py + 42);
       if ('letterSpacing' in lctx) lctx.letterSpacing = '0px';
     }
-    // score — bold and clear, sized to sit comfortably under the label
-    ctx.save();
-    ctx.font = '800 62px "Archivo", system-ui, sans-serif';
-    ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 3;
-    ctx.fillStyle = PAL.text;
-    ctx.fillText(spec.title, W / 2, H - 46);
-    ctx.restore();
+    ctx.font = '800 44px "Archivo", system-ui, sans-serif'; ctx.fillStyle = PAL.text;
+    ctx.fillText(spec.title, cx, py + 96);
     ctx.textAlign = 'left';
     return;
   }
