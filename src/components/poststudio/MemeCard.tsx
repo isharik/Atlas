@@ -154,7 +154,7 @@ export function render(canvas: HTMLCanvasElement, c: Comp, selId: string | null,
   ctx.restore();  // end stage clip
 
   // footer — a short gold underline, with the credit centered neatly beneath it
-  const midY = STAGE_H + 30;
+  const midY = STAGE_H + 22;
   ctx.strokeStyle = 'rgba(236,210,138,0.55)'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(W / 2 - 90, midY); ctx.lineTo(W / 2 + 90, midY); ctx.stroke();
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
@@ -162,7 +162,7 @@ export function render(canvas: HTMLCanvasElement, c: Comp, selId: string | null,
   const label = 'MADE VIA ATLAS FOR PROSPER';
   const lctx = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
   if ('letterSpacing' in lctx) lctx.letterSpacing = '0.18em';
-  ctx.fillText(label, W / 2 + 4, midY + 40);
+  ctx.fillText(label, W / 2 + 4, midY + 30);
   if ('letterSpacing' in lctx) lctx.letterSpacing = '0px';
   ctx.textAlign = 'left';
 

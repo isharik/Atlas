@@ -448,7 +448,7 @@ body {
 
 /* ── Post Studio V2 — quick / meme maker ── */
 .meme-studio { display: grid; grid-template-columns: minmax(0, 312px) minmax(0, 1fr); gap: 26px; align-items: start; }
-.meme-controls { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 84px; }
+.meme-controls { display: flex; flex-direction: column; gap: 9px; position: sticky; top: 84px; }
 .meme-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .meme-addrow { display: flex; gap: 6px; }
 .meme-mini { display: inline-flex; align-items: center; padding: 6px 11px; border-radius: 8px; border: 1px solid var(--border-strong); background: rgba(12,18,15,0.5); color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.05em; cursor: pointer; transition: border-color 160ms ease, background 160ms ease, transform 140ms var(--ease-out2); }
@@ -464,9 +464,9 @@ body {
 .meme-chip { flex: 1 1 auto; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--border-strong); background: rgba(12,18,15,0.55); color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.05em; cursor: pointer; transition: color 150ms ease, border-color 150ms ease, background 150ms ease, transform 140ms var(--ease-out2); }
 .meme-chip:active { transform: scale(0.95); }
 .meme-chip[data-on='true'] { color: var(--bg, #0e1613); background: var(--primary); border-color: var(--primary); font-weight: 600; }
-.meme-templates { display: flex; flex-wrap: wrap; gap: 7px; }
+.meme-templates { display: flex; flex-wrap: wrap; gap: 6px; }
 .meme-tpl {
-  padding: 7px 12px; border-radius: 999px; cursor: pointer; border: 1px solid var(--border); background: rgba(15, 22, 18, 0.5);
+  padding: 6px 11px; border-radius: 999px; cursor: pointer; border: 1px solid var(--border); background: rgba(15, 22, 18, 0.5);
   font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.05em; color: var(--text);
   transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 150ms var(--ease-out2);
 }
@@ -488,11 +488,11 @@ body {
 .meme-upload__btn:hover { border-color: rgba(228, 200, 119, 0.5); background: rgba(228, 200, 119, 0.06); }
 .meme-upload__clear { background: none; border: none; cursor: pointer; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mist); }
 .meme-upload__clear:hover { color: var(--primary); }
-.meme-canvas { border-radius: 14px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 24px 60px -34px rgba(0, 0, 0, 0.8); }
-.meme-actions { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.meme-canvas { border-radius: 14px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 24px 60px -34px rgba(0, 0, 0, 0.8); max-width: 940px; }
+.meme-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; max-width: 940px; }
 
 /* grouped control sections */
-.meme-section { display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 15px; border: 1px solid var(--border-strong); border-radius: 14px; background: rgba(14, 21, 17, 0.62); }
+.meme-section { display: flex; flex-direction: column; gap: 8px; padding: 11px 12px 12px; border: 1px solid var(--border-strong); border-radius: 13px; background: rgba(14, 21, 17, 0.62); }
 .meme-hint { font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(198, 210, 202, 0.55); margin: 2px 0 0; }
 
 /* range sliders — crisp, on-brand */
