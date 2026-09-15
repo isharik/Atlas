@@ -59,6 +59,7 @@ export function Quiz() {
     detail: 'How well do you know the Performance Market for Liquid Alpha? Take the quiz in Prosper Atlas.',
     footnote: 'Community-built · not an official Prosper product',
     poster: true,
+    bgImage: '/quiz_bg.png',
   }), [score, total]);
   const shareCaption = `I scored ${score}/${total} on the Prosper quiz — "${scoreLabel(score)}". Think you can beat it?`;
 

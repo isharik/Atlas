@@ -10,6 +10,7 @@ export interface ShareSpec {
   detail?: string;
   footnote?: string;
   poster?: boolean;      // graphical layout: big title, one short line, network motif, minimal text
+  bgImage?: string;      // optional background image URL — themed scrim is applied over it
 }
 
 /** Static wireframe-network motif (echoes the app's globe) drawn into the canvas. */
@@ -60,8 +61,15 @@ function fitFont(ctx: CanvasRenderingContext2D, text: string, family: string, we
   return size;
 }
 
+function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
+  const ir = img.width / img.height, r = w / h;
+  let dw = w, dh = h;
+  if (ir > r) { dh = h; dw = h * ir; } else { dw = w; dh = w / ir; }
+  ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+}
+
 /** Draws the share card into a 1200×630 canvas (2× backing store for crispness). */
-export function drawCard(canvas: HTMLCanvasElement, spec: ShareSpec) {
+export function drawCard(canvas: HTMLCanvasElement, spec: ShareSpec, bgImg?: HTMLImageElement | null) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const dpr = 2;
@@ -69,23 +77,39 @@ export function drawCard(canvas: HTMLCanvasElement, spec: ShareSpec) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
 
+  const hasImg = !!bgImg;
+
   // background
   const g = ctx.createLinearGradient(0, 0, W, H);
   g.addColorStop(0, PAL.bg1); g.addColorStop(1, PAL.bg2);
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
-  // grid
-  ctx.strokeStyle = 'rgba(56,224,160,0.05)'; ctx.lineWidth = 1;
-  for (let x = 0; x <= W; x += 48) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-  for (let y = 0; y <= H; y += 48) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  if (hasImg) {
+    // photo/graphic background, cover-fit, with a themed scrim for legibility
+    drawCover(ctx, bgImg!, 0, 0, W, H);
+    const v = ctx.createLinearGradient(0, 0, 0, H);
+    v.addColorStop(0, 'rgba(6,10,8,0.42)'); v.addColorStop(0.55, 'rgba(6,10,8,0.58)'); v.addColorStop(1, 'rgba(6,10,8,0.9)');
+    ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+    const side = ctx.createLinearGradient(0, 0, W * 0.75, 0);
+    side.addColorStop(0, 'rgba(6,10,8,0.55)'); side.addColorStop(1, 'rgba(6,10,8,0)');
+    ctx.fillStyle = side; ctx.fillRect(0, 0, W, H);
+    const tint = ctx.createRadialGradient(W * 0.5, H * 0.5, 80, W * 0.5, H * 0.5, 640);
+    tint.addColorStop(0, 'rgba(53,207,155,0.05)'); tint.addColorStop(1, 'rgba(53,207,155,0)');
+    ctx.fillStyle = tint; ctx.fillRect(0, 0, W, H);
+  } else {
+    // grid
+    ctx.strokeStyle = 'rgba(56,224,160,0.05)'; ctx.lineWidth = 1;
+    for (let x = 0; x <= W; x += 48) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y <= H; y += 48) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
 
-  // emerald glow
-  const glow = ctx.createRadialGradient(W * 0.5, H * 0.52, 40, W * 0.5, H * 0.52, 520);
-  glow.addColorStop(0, 'rgba(53,207,155,0.14)'); glow.addColorStop(1, 'rgba(53,207,155,0)');
-  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+    // emerald glow
+    const glow = ctx.createRadialGradient(W * 0.5, H * 0.52, 40, W * 0.5, H * 0.52, 520);
+    glow.addColorStop(0, 'rgba(53,207,155,0.14)'); glow.addColorStop(1, 'rgba(53,207,155,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+  }
 
-  // graphical network motif (poster cards) — sits on the right, behind the text
-  if (spec.poster) {
+  // graphical network motif (poster cards without a background image) — sits on the right, behind the text
+  if (spec.poster && !hasImg) {
     const mg = ctx.createRadialGradient(940, 330, 30, 940, 330, 300);
     mg.addColorStop(0, 'rgba(53,207,155,0.12)'); mg.addColorStop(1, 'rgba(53,207,155,0)');
     ctx.fillStyle = mg; ctx.fillRect(560, 60, W - 560, H - 120);
@@ -97,7 +121,7 @@ export function drawCard(canvas: HTMLCanvasElement, spec: ShareSpec) {
   roundRect(ctx, 24, 24, W - 48, H - 48, 22); ctx.stroke();
 
   const M = 72;
-  const textMaxW = spec.poster ? 560 : W - M * 2; // leave room for the motif on posters
+  const textMaxW = (spec.poster && !hasImg) ? 560 : W - M * 2; // full width when an image is the backdrop
 
   // header
   ctx.textBaseline = 'alphabetic';
@@ -180,15 +204,25 @@ export function ShareModal({ open, onClose, spec, caption, url }: {
   open: boolean; onClose: () => void; spec: ShareSpec; caption: string; url: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const bgRef = useRef<HTMLImageElement | null>(null);
   const [copied, setCopied] = useState<'idle' | 'ok' | 'fail'>('idle');
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    const render = () => { if (!cancelled && canvasRef.current) drawCard(canvasRef.current, spec); };
+    const render = () => { if (!cancelled && canvasRef.current) drawCard(canvasRef.current, spec, bgRef.current); };
     // draw once fonts are ready so Cinzel/Rajdhani render correctly on the canvas
     (document as Document & { fonts?: FontFaceSet }).fonts?.ready.then(render);
     render();
+    // load the optional background image, then redraw with it
+    if (spec.bgImage) {
+      if (bgRef.current?.src.endsWith(spec.bgImage)) render();
+      else {
+        const im = new Image();
+        im.onload = () => { bgRef.current = im; render(); };
+        im.src = spec.bgImage;
+      }
+    } else { bgRef.current = null; }
     return () => { cancelled = true; };
   }, [open, spec]);
 
