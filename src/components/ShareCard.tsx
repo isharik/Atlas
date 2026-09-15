@@ -11,6 +11,7 @@ export interface ShareSpec {
   footnote?: string;
   poster?: boolean;      // graphical layout: big title, one short line, network motif, minimal text
   bgImage?: string;      // optional background image URL — themed scrim is applied over it
+  minimal?: boolean;     // image-as-card: just a frame + the score on the bottom pane, no other text
 }
 
 /** Static wireframe-network motif (echoes the app's globe) drawn into the canvas. */
@@ -83,6 +84,31 @@ export function drawCard(canvas: HTMLCanvasElement, spec: ShareSpec, bgImg?: HTM
   const g = ctx.createLinearGradient(0, 0, W, H);
   g.addColorStop(0, PAL.bg1); g.addColorStop(1, PAL.bg2);
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  // minimal card — the image is the card; only a frame + the score on the bottom pane
+  if (spec.minimal) {
+    if (hasImg) drawCover(ctx, bgImg!, 0, 0, W, H);
+    // bottom pane so the score stays readable over any image
+    const pane = ctx.createLinearGradient(0, H - 190, 0, H);
+    pane.addColorStop(0, 'rgba(6,10,8,0)'); pane.addColorStop(0.5, 'rgba(6,10,8,0.6)'); pane.addColorStop(1, 'rgba(6,10,8,0.94)');
+    ctx.fillStyle = pane; ctx.fillRect(0, H - 190, W, 190);
+    // gold frame
+    ctx.strokeStyle = 'rgba(236,210,138,0.5)'; ctx.lineWidth = 2;
+    roundRect(ctx, 24, 24, W - 48, H - 48, 22); ctx.stroke();
+    // score on the bottom pane
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.font = '700 62px "Rajdhani", sans-serif'; ctx.fillStyle = PAL.text;
+    ctx.fillText(spec.title, W / 2, H - 78);
+    if (spec.accentWord) {
+      ctx.font = '600 24px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.gold;
+      const lctx = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
+      if ('letterSpacing' in lctx) lctx.letterSpacing = '0.18em';
+      ctx.fillText(spec.accentWord.toUpperCase(), W / 2, H - 42);
+      if ('letterSpacing' in lctx) lctx.letterSpacing = '0px';
+    }
+    ctx.textAlign = 'left';
+    return;
+  }
 
   if (hasImg) {
     // photo/graphic background, cover-fit, with a themed scrim for legibility

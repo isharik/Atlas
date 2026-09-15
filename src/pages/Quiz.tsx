@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Container, Kicker, CTA } from '@/components/PageBits';
-import { ShareModal, type ShareSpec } from '@/components/ShareCard';
+import { drawCard, type ShareSpec } from '@/components/ShareCard';
 import { useAudio } from '@/audio/AudioProvider';
 
 const ease = [0.23, 1, 0.32, 1] as [number, number, number, number];
@@ -9,16 +9,16 @@ const spring = { type: 'spring' as const, stiffness: 260, damping: 30, mass: 0.8
 
 interface Q { q: string; options: string[]; a: number; note: string }
 const QUESTIONS: Q[] = [
-  { q: 'What is Prosper, in one line?', options: ['A meme-coin launchpad', 'The Performance Market for Liquid Alpha', 'A lending protocol', 'An NFT marketplace'], a: 1, note: 'Prosper turns elite on-chain strategies into transparent, investable markets.' },
-  { q: 'What does a Curator actually do?', options: ['Runs the validators', 'Provides liquidity anonymously', 'Brings a strategy on-chain and stays accountable for it', 'Audits other protocols'], a: 2, note: 'Curators set the thesis, risk and fees, then build a public track record.' },
-  { q: 'Vault Shares give you…', options: ['Governance votes only', 'Proportional exposure to the Vault that tracks NAV', 'A fixed APY', 'The Curator’s fees'], a: 1, note: 'Vault Shares are your direct claim on the Vault’s net assets.' },
-  { q: 'A p{VAULT} is…', options: ['The Vault’s stablecoin', 'A market pricing conviction in the Curator and strategy', 'A staking receipt', 'A governance token'], a: 1, note: 'It’s an independent market on the Curator — separate from Vault Shares.' },
-  { q: 'A p{VAULT} opens on a ___ then graduates to ___.', options: ['Auction → orderbook', 'Bonding curve → FaroSwap', 'Presale → CEX', 'Lottery → AMM'], a: 1, note: 'It fills on an internal bonding curve, then trades on FaroSwap.' },
-  { q: 'Which chain is Prosper built on?', options: ['Solana', 'Base', 'Pharos', 'Arbitrum'], a: 2, note: 'Pharos — a scalable RealFi Layer-1.' },
-  { q: 'What is a Track Record here?', options: ['A private PDF from the Curator', 'A public, verifiable on-chain performance history', 'A Discord role', 'A testnet badge'], a: 1, note: 'The whole point: proof you can check, not a pitch.' },
-  { q: 'FaroSwap is…', options: ['A bridge', 'Pharos’s native AMM/PMM DEX', 'A wallet', 'A price oracle'], a: 1, note: 'Where a p{VAULT} trades once it graduates.' },
-  { q: 'A market-neutral strategy mainly…', options: ['Bets hard on one direction', 'Captures funding and basis with low directional exposure', 'Only holds stablecoins', 'Mirrors the S&P'], a: 1, note: 'Steadier, lower-beta return — a different lens than macro.' },
-  { q: 'The Early Depositor Reward is…', options: ['A referral bonus', 'A share of 6% of p{VAULT} supply for depositing in the first 14 days', 'Free gas', 'A staking multiplier'], a: 1, note: 'Deposit within the cap in the first 14 days to earn it.' },
+  { q: 'What is Prosper, in one line?', options: ['The Performance Market for Liquid Alpha', 'A meme-coin launchpad', 'A lending protocol', 'An NFT marketplace'], a: 0, note: 'Prosper turns elite on-chain strategies into transparent, investable markets.' },
+  { q: 'What does a Curator actually do?', options: ['Runs the validators', 'Provides liquidity anonymously', 'Audits other protocols', 'Brings a strategy on-chain and stays accountable for it'], a: 3, note: 'Curators set the thesis, risk and fees, then build a public track record.' },
+  { q: 'Vault Shares give you…', options: ['Governance votes only', 'A fixed APY', 'Proportional exposure to the Vault that tracks NAV', 'The Curator’s fees'], a: 2, note: 'Vault Shares are your direct claim on the Vault’s net assets.' },
+  { q: 'A p{VAULT} is…', options: ['A market pricing conviction in the Curator and strategy', 'The Vault’s stablecoin', 'A staking receipt', 'A governance token'], a: 0, note: 'It’s an independent market on the Curator — separate from Vault Shares.' },
+  { q: 'A p{VAULT} opens on a ___ then graduates to ___.', options: ['Auction → orderbook', 'Presale → CEX', 'Lottery → AMM', 'Bonding curve → FaroSwap'], a: 3, note: 'It fills on an internal bonding curve, then trades on FaroSwap.' },
+  { q: 'Which chain is Prosper built on?', options: ['Solana', 'Pharos', 'Base', 'Arbitrum'], a: 1, note: 'Pharos — a scalable RealFi Layer-1.' },
+  { q: 'What is a Track Record here?', options: ['A private PDF from the Curator', 'A Discord role', 'A public, verifiable on-chain performance history', 'A testnet badge'], a: 2, note: 'The whole point: proof you can check, not a pitch.' },
+  { q: 'FaroSwap is…', options: ['Pharos’s native AMM/PMM DEX', 'A bridge', 'A wallet', 'A price oracle'], a: 0, note: 'Where a p{VAULT} trades once it graduates.' },
+  { q: 'A market-neutral strategy mainly…', options: ['Bets hard on one direction', 'Only holds stablecoins', 'Mirrors the S&P', 'Captures funding and basis with low directional exposure'], a: 3, note: 'Steadier, lower-beta return — a different lens than macro.' },
+  { q: 'The Early Depositor Reward is…', options: ['A referral bonus', 'Free gas', 'A share of 6% of p{VAULT} supply for depositing in the first 14 days', 'A staking multiplier'], a: 2, note: 'Deposit within the cap in the first 14 days to earn it.' },
 ];
 
 function scoreLabel(s: number) {
@@ -34,9 +34,12 @@ export function Quiz() {
   const [picked, setPicked] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const cardRef = useRef<HTMLCanvasElement>(null);
+  const bgRef = useRef<HTMLImageElement | null>(null);
   const total = QUESTIONS.length;
   const cur = QUESTIONS[i];
+  const url = typeof window !== 'undefined' ? window.location.origin : 'https://pros-per.xyz';
 
   const pick = (idx: number) => {
     if (picked !== null) return;
@@ -54,16 +57,34 @@ export function Quiz() {
 
   const shareSpec: ShareSpec = useMemo(() => ({
     eyebrow: 'Prosper Quiz · via Atlas',
-    title: `${score}/${total}`,
+    title: `${score} / ${total}`,
     accentWord: scoreLabel(score),
-    detail: 'How well do you know the Performance Market for Liquid Alpha? Take the quiz in Prosper Atlas.',
-    footnote: 'Community-built · not an official Prosper product',
-    poster: true,
+    minimal: true,
     bgImage: '/quiz_bg.png',
   }), [score, total]);
   const shareCaption = `I scored ${score}/${total} on the Prosper quiz — "${scoreLabel(score)}". Think you can beat it?`;
 
-  const pct = done ? 100 : Math.round((i / total) * 100);
+  // draw the result card as soon as the quiz is done
+  useEffect(() => {
+    if (!done) return;
+    let cancelled = false;
+    const render = () => { if (!cancelled && cardRef.current) drawCard(cardRef.current, shareSpec, bgRef.current); };
+    (document as Document & { fonts?: FontFaceSet }).fonts?.ready.then(render);
+    render();
+    if (!bgRef.current) { const im = new Image(); im.onload = () => { bgRef.current = im; render(); }; im.src = '/quiz_bg.png'; }
+    return () => { cancelled = true; };
+  }, [done, shareSpec]);
+
+  const downloadCard = () => {
+    click(); const c = cardRef.current; if (!c) return;
+    c.toBlob((b) => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'prosper-quiz-score.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }, 'image/png');
+  };
+  const copyCard = async () => {
+    click(); const c = cardRef.current; if (!c) return;
+    try { const b = await new Promise<Blob | null>((r) => c.toBlob(r, 'image/png')); if (!b) throw new Error(); await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]); setCopied(true); } catch { downloadCard(); }
+    setTimeout(() => setCopied(false), 2000);
+  };
+  const postX = () => { click(); window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`${shareCaption}\n\n${url}`)}`, '_blank', 'noopener'); };
 
   return (
     <div style={{ paddingTop: 84, paddingBottom: 72 }}>
@@ -107,21 +128,20 @@ export function Quiz() {
             )}
           </motion.div>
         ) : (
-          <motion.div initial={{ opacity: 0, scale: 0.96, filter: 'blur(6px)' }} animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }} transition={spring} className="quiz-card quiz-result">
-            <div className="font-mono quiz-count" style={{ color: 'var(--emerald-glow)' }}>Your result</div>
-            <div className="font-display quiz-score">{score}<span style={{ color: 'var(--mist)' }}>/{total}</span></div>
-            <div className="font-head quiz-badge">{scoreLabel(score)}</div>
-            <p className="font-display quiz-result__line">{score >= 7 ? 'You actually get how Prosper works. Go make some noise about it.' : 'Solid start. Skim the Guide and the Glossary, then run it back.'}</p>
-            <div className="flex items-center gap-3 flex-wrap" style={{ justifyContent: 'center', marginTop: 22 }}>
-              <button onClick={() => { click(); setShareOpen(true); }} className="pressable share-btn share-btn--gold">Share your score</button>
+          <motion.div initial={{ opacity: 0, scale: 0.96, filter: 'blur(6px)' }} animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }} transition={spring} className="quiz-resultcard">
+            <div className="quiz-cardframe">
+              <canvas ref={cardRef} style={{ width: '100%', height: 'auto', display: 'block' }} aria-label={`Your score: ${score} out of ${total}`} />
+            </div>
+            <div className="flex items-center gap-2.5 flex-wrap" style={{ justifyContent: 'center', marginTop: 16 }}>
+              <button onClick={postX} className="pressable share-btn share-btn--gold" style={{ flex: '1 1 150px' }}>Share on X</button>
+              <button onClick={downloadCard} className="pressable share-btn">Download</button>
+              <button onClick={copyCard} className="pressable share-btn">{copied ? 'Copied ✓' : 'Copy'}</button>
               <button onClick={restart} className="pressable share-btn">Try again</button>
               <CTA to="/guide">Read the Guide</CTA>
             </div>
           </motion.div>
         )}
       </Container>
-
-      <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} spec={shareSpec} caption={shareCaption} url={typeof window !== 'undefined' ? window.location.origin : 'https://pros-per.xyz'} />
     </div>
   );
 }
