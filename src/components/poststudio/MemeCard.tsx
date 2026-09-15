@@ -17,7 +17,11 @@ const FONTS: Record<FontKey, { label: string; stack: string; weight: string }> =
   serif: { label: 'Serif', stack: '"Cinzel", Georgia, serif', weight: '700' },
 };
 
-export interface TextEl { kind: 'text'; id: string; text: string; x: number; y: number; size: number; color: string; opacity: number; align: CanvasTextAlign; font: FontKey }
+export interface TextEl {
+  kind: 'text'; id: string; text: string; x: number; y: number; size: number; color: string; opacity: number;
+  align: CanvasTextAlign; font: FontKey; weight: number; tracking: number; lineH: number; rotate: number;
+  upper: boolean; pill: boolean; pillColor: string;
+}
 export interface ImageEl { kind: 'image'; id: string; img: HTMLImageElement; zoom: number; x: number; y: number }
 export type El = TextEl | ImageEl;
 
@@ -27,7 +31,10 @@ export interface Comp { els: El[]; bg: string; overlay: number }
 let uid = 0;
 const nid = () => `e${++uid}`;
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
-const mkText = (over: Partial<TextEl> = {}): TextEl => ({ kind: 'text', id: nid(), text: 'Your hook goes here', x: 0.5, y: 0.44, size: 92, color: '#f5f2e8', opacity: 1, align: 'center', font: 'head', ...over });
+const mkText = (over: Partial<TextEl> = {}): TextEl => ({
+  kind: 'text', id: nid(), text: 'Your hook goes here', x: 0.5, y: 0.44, size: 92, color: '#f5f2e8', opacity: 1,
+  align: 'center', font: 'head', weight: 700, tracking: 0, lineH: 1.16, rotate: 0, upper: false, pill: false, pillColor: '#0e1613', ...over,
+});
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath(); ctx.moveTo(x + r, y);
@@ -60,27 +67,38 @@ function drawImageEl(ctx: CanvasRenderingContext2D, el: ImageEl, rx: number, rw:
   ctx.drawImage(el.img, dx, dy, dw, dh);
   ctx.restore();
 }
-function drawTextEl(ctx: CanvasRenderingContext2D, el: TextEl, shadow: boolean): Box {
+function drawTextEl(ctx: CanvasRenderingContext2D, el: TextEl): Box {
   const f = FONTS[el.font];
-  ctx.font = `${f.weight} ${el.size}px ${f.stack}`;
+  const text = el.upper ? (el.text || ' ').toUpperCase() : (el.text || ' ');
+  ctx.font = `${el.weight} ${el.size}px ${f.stack}`;
+  const ls = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
+  if ('letterSpacing' in ls) ls.letterSpacing = `${el.tracking}em`;
   ctx.textBaseline = 'top';
   ctx.textAlign = el.align;
-  const maxW = W * 0.88;
-  const lines = wrap(ctx, el.text || ' ', maxW);
-  const lh = el.size * 1.16;
+  const maxW = W * 0.9;
+  const lines = wrap(ctx, text, maxW);
+  const lh = el.size * el.lineH;
   const totalH = lines.length * lh;
   let widest = 1;
   for (const l of lines) widest = Math.max(widest, ctx.measureText(l).width);
   const cx = el.x * W, cy = el.y * STAGE_H;
-  const top = cy - totalH / 2;
-  const anchorX = el.align === 'left' ? cx - widest / 2 : el.align === 'right' ? cx + widest / 2 : cx;
+  const anchorX = el.align === 'left' ? -widest / 2 : el.align === 'right' ? widest / 2 : 0;
   ctx.save();
+  ctx.translate(cx, cy);
+  if (el.rotate) ctx.rotate(el.rotate * Math.PI / 180);
+  const top = -totalH / 2;
   ctx.globalAlpha = clamp(el.opacity, 0, 1);
+  if (el.pill) {
+    const padX = el.size * 0.3, padY = el.size * 0.16;
+    ctx.fillStyle = el.pillColor;
+    roundRect(ctx, -widest / 2 - padX, top - padY, widest + padX * 2, totalH + padY * 2, Math.min(30, el.size * 0.34));
+    ctx.fill();
+  }
   ctx.fillStyle = el.color;
-  if (shadow) { ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 3; }
   lines.forEach((l, i) => ctx.fillText(l, anchorX, top + i * lh));
   ctx.restore();
-  return { x: cx - widest / 2, y: top, w: widest, h: totalH };
+  if ('letterSpacing' in ls) ls.letterSpacing = '0px';
+  return { x: cx - widest / 2, y: cy - totalH / 2, w: widest, h: totalH };
 }
 
 export function render(canvas: HTMLCanvasElement, c: Comp, selId: string | null, boxes: Record<string, Box>) {
@@ -93,10 +111,13 @@ export function render(canvas: HTMLCanvasElement, c: Comp, selId: string | null,
   const images = c.els.filter((e): e is ImageEl => e.kind === 'image');
   const texts = c.els.filter((e): e is TextEl => e.kind === 'text');
 
-  // 1) background colour (fills the stage; shows where images don't reach)
-  ctx.fillStyle = c.bg; ctx.fillRect(0, 0, W, STAGE_H);
+  // solid ground for the WHOLE canvas — footer strip is the same colour, so nothing leaks
+  ctx.fillStyle = c.bg; ctx.fillRect(0, 0, W, H);
 
-  // 2) images — one fills the stage; two split left/right
+  // everything on the "stage" is clipped above the footer strip
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, W, STAGE_H); ctx.clip();
+
   if (images.length === 1) drawImageEl(ctx, images[0], 0, W);
   else if (images.length >= 2) {
     drawImageEl(ctx, images[0], 0, W / 2);
@@ -105,14 +126,14 @@ export function render(canvas: HTMLCanvasElement, c: Comp, selId: string | null,
     ctx.beginPath(); ctx.moveTo(W / 2, 34); ctx.lineTo(W / 2, STAGE_H - 34); ctx.stroke();
   }
 
-  // 3) darken overlay for text legibility (only over imagery)
-  if (images.length) {
+  // optional darken — only when the user asks for it (default 0 → images stay exactly as they are)
+  if (images.length && c.overlay > 0) {
     const g = ctx.createLinearGradient(0, 0, 0, STAGE_H);
     const b = clamp(c.overlay, 0, 1);
-    g.addColorStop(0, `rgba(6,10,8,${(b * 0.72).toFixed(3)})`);
-    g.addColorStop(1, `rgba(6,10,8,${Math.min(0.95, b * 0.72 + 0.22).toFixed(3)})`);
+    g.addColorStop(0, `rgba(6,10,8,${(b * 0.4).toFixed(3)})`);
+    g.addColorStop(1, `rgba(6,10,8,${(b * 0.85).toFixed(3)})`);
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, STAGE_H);
-  } else {
+  } else if (!images.length) {
     ctx.strokeStyle = 'rgba(56,224,160,0.05)'; ctx.lineWidth = 1;
     for (let x = 0; x <= W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, STAGE_H); ctx.stroke(); }
     for (let y = 0; y <= STAGE_H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
@@ -121,16 +142,8 @@ export function render(canvas: HTMLCanvasElement, c: Comp, selId: string | null,
     ctx.fillStyle = glow; ctx.fillRect(0, 0, W, STAGE_H);
   }
 
-  // header (top-left, small)
-  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 14;
-  ctx.font = '700 40px "Cinzel", serif'; ctx.fillStyle = PAL.gold; ctx.fillText('PROSPER', 72, 96);
-  const pW = ctx.measureText('PROSPER').width;
-  ctx.font = '600 17px "JetBrains Mono", monospace'; ctx.fillStyle = '#c3cfc7'; ctx.fillText('ATLAS', 72 + pW + 16, 96);
-  ctx.restore();
-
-  // 4) text elements
-  for (const t of texts) boxes[t.id] = drawTextEl(ctx, t, images.length > 0);
+  // text elements
+  for (const t of texts) boxes[t.id] = drawTextEl(ctx, t);
 
   // selection outline
   const box = selId ? boxes[selId] : null;
@@ -140,23 +153,17 @@ export function render(canvas: HTMLCanvasElement, c: Comp, selId: string | null,
     roundRect(ctx, box.x - 16, box.y - 12, box.w + 32, box.h + 24, 10); ctx.stroke();
     ctx.restore();
   }
+  ctx.restore();  // end stage clip
 
-  // gold frame around the whole card
+  // footer credit — centered, on the solid bottom strip only
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.font = '600 22px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.dim;
+  ctx.fillText('Made via Atlas for Prosper', W / 2, STAGE_H + 50);
+  ctx.textAlign = 'left';
+
+  // gold frame around the whole card (kept as before)
   ctx.strokeStyle = 'rgba(236,210,138,0.45)'; ctx.lineWidth = 2;
   roundRect(ctx, 24, 24, W - 48, H - 48, 26); ctx.stroke();
-
-  // 5) FOOTER — solid bar at the exact bottom, never on the image
-  ctx.fillStyle = c.bg; ctx.fillRect(24, STAGE_H, W - 48, FOOTER - 24);
-  ctx.strokeStyle = 'rgba(236,210,138,0.18)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(72, STAGE_H + 8); ctx.lineTo(W - 72, STAGE_H + 8); ctx.stroke();
-  const fy = STAGE_H + 50;
-  ctx.textAlign = 'left'; ctx.font = '600 21px "JetBrains Mono", monospace';
-  ctx.fillStyle = PAL.gold; ctx.fillText('pros-per.xyz', 72, fy);
-  const uW = ctx.measureText('pros-per.xyz').width;
-  ctx.fillStyle = PAL.dim; ctx.fillText('· via @ProsperTicker', 72 + uW + 14, fy);
-  ctx.textAlign = 'right'; ctx.font = '600 18px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.dim;
-  ctx.fillText('Made via Atlas for Prosper', W - 72, fy);
-  ctx.textAlign = 'left';
 }
 
 // quick starters — grounded Prosper copy, freely editable / movable after
@@ -176,7 +183,7 @@ export function MemeStudio() {
   const ref = useRef<HTMLCanvasElement>(null);
   const boxes = useRef<Record<string, Box>>({});
   const drag = useRef<{ id: string; fx: number; fy: number } | null>(null);
-  const [comp, setComp] = useState<Comp>(() => ({ els: PRESETS[0].make(), bg: '#0e1613', overlay: 0.5 }));
+  const [comp, setComp] = useState<Comp>(() => ({ els: PRESETS[0].make(), bg: '#0e1613', overlay: 0 }));
   const [sel, setSel] = useState<string | null>(() => comp.els[0]?.id ?? null);
   const [copied, setCopied] = useState(false);
 
@@ -299,16 +306,27 @@ export function MemeStudio() {
               {(['left', 'center', 'right'] as CanvasTextAlign[]).map((a) => (
                 <button key={a} onClick={() => setEl(selEl.id, { align: a })} className="pressable meme-chip" data-on={selEl.align === a ? 'true' : 'false'}>{a === 'left' ? '⇤' : a === 'center' ? '↔' : '⇥'}</button>
               ))}
+              <button onClick={() => setEl(selEl.id, { weight: selEl.weight >= 700 ? 400 : 700 })} className="pressable meme-chip" data-on={selEl.weight >= 700 ? 'true' : 'false'} style={{ fontWeight: 700 }}>B</button>
+              <button onClick={() => setEl(selEl.id, { upper: !selEl.upper })} className="pressable meme-chip" data-on={selEl.upper ? 'true' : 'false'}>AA</button>
+              <button onClick={() => setEl(selEl.id, { pill: !selEl.pill })} className="pressable meme-chip" data-on={selEl.pill ? 'true' : 'false'}>▭</button>
             </div>
-            <label className="meme-adj"><span className="font-mono">Size</span>
-              <input type="range" min={24} max={260} step={1} value={selEl.size} onChange={(e) => setEl(selEl.id, { size: +e.target.value })} className="meme-range" /></label>
-            <label className="meme-adj"><span className="font-mono">Opacity</span>
-              <input type="range" min={0.1} max={1} step={0.01} value={selEl.opacity} onChange={(e) => setEl(selEl.id, { opacity: +e.target.value })} className="meme-range" /></label>
+            <div className="meme-adjgrid">
+              <label className="meme-adj"><span className="font-mono">Size</span>
+                <input type="range" min={24} max={280} step={1} value={selEl.size} onChange={(e) => setEl(selEl.id, { size: +e.target.value })} className="meme-range" /></label>
+              <label className="meme-adj"><span className="font-mono">Fade</span>
+                <input type="range" min={0.1} max={1} step={0.01} value={selEl.opacity} onChange={(e) => setEl(selEl.id, { opacity: +e.target.value })} className="meme-range" /></label>
+              <label className="meme-adj"><span className="font-mono">Track</span>
+                <input type="range" min={-0.05} max={0.4} step={0.005} value={selEl.tracking} onChange={(e) => setEl(selEl.id, { tracking: +e.target.value })} className="meme-range" /></label>
+              <label className="meme-adj"><span className="font-mono">Lines</span>
+                <input type="range" min={0.85} max={1.8} step={0.01} value={selEl.lineH} onChange={(e) => setEl(selEl.id, { lineH: +e.target.value })} className="meme-range" /></label>
+              <label className="meme-adj"><span className="font-mono">Tilt</span>
+                <input type="range" min={-45} max={45} step={1} value={selEl.rotate} onChange={(e) => setEl(selEl.id, { rotate: +e.target.value })} className="meme-range" /></label>
+            </div>
             <div className="meme-swatches">
-              {TEXT_SWATCHES.map((c) => <button key={c} onClick={() => setEl(selEl.id, { color: c })} className="pressable meme-swatch" data-on={c === selEl.color ? 'true' : 'false'} style={{ background: c }} aria-label={c} />)}
-              <label className="meme-swatch meme-swatch--pick"><input type="color" value={selEl.color} onChange={(e) => setEl(selEl.id, { color: e.target.value })} /><span>+</span></label>
+              {TEXT_SWATCHES.map((c) => <button key={c} onClick={() => setEl(selEl.id, selEl.pill ? { pillColor: c } : { color: c })} className="pressable meme-swatch" data-on={c === (selEl.pill ? selEl.pillColor : selEl.color) ? 'true' : 'false'} style={{ background: c }} aria-label={c} />)}
+              <label className="meme-swatch meme-swatch--pick"><input type="color" value={selEl.pill ? selEl.pillColor : selEl.color} onChange={(e) => setEl(selEl.id, selEl.pill ? { pillColor: e.target.value } : { color: e.target.value })} /><span>+</span></label>
             </div>
-            <p className="meme-hint">Drag it on the preview to place it.</p>
+            <p className="meme-hint">{selEl.pill ? 'Picking the highlight colour · drag on preview to place' : 'Picking the text colour · drag on preview to place'}</p>
           </div>
         )}
         {selEl?.kind === 'image' && (
