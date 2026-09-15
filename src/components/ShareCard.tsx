@@ -93,26 +93,26 @@ export function drawCard(canvas: HTMLCanvasElement, spec: ShareSpec, bgImg?: HTM
     roundRect(ctx, 0, 0, W, H, R); ctx.clip();
     if (hasImg) drawCover(ctx, bgImg!, 0, 0, W, H); else { ctx.fillStyle = PAL.bg1; ctx.fillRect(0, 0, W, H); }
     // bottom pane so the score stays readable over any image
-    const pane = ctx.createLinearGradient(0, H - 210, 0, H);
+    const pane = ctx.createLinearGradient(0, H - 220, 0, H);
     pane.addColorStop(0, 'rgba(6,10,8,0)'); pane.addColorStop(0.5, 'rgba(6,10,8,0.62)'); pane.addColorStop(1, 'rgba(6,10,8,0.95)');
-    ctx.fillStyle = pane; ctx.fillRect(0, H - 210, W, 210);
+    ctx.fillStyle = pane; ctx.fillRect(0, H - 220, W, 220);
     ctx.restore();
 
     const lctx = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
     ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    // label above the score
+    // label above the score, with clear breathing room
     if (spec.accentWord) {
-      ctx.font = '700 22px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.gold;
-      if ('letterSpacing' in lctx) lctx.letterSpacing = '0.32em';
-      ctx.fillText(spec.accentWord.toUpperCase(), W / 2 + 3, H - 92);
+      ctx.font = '700 20px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.gold;
+      if ('letterSpacing' in lctx) lctx.letterSpacing = '0.3em';
+      ctx.fillText(spec.accentWord.toUpperCase(), W / 2 + 3, H - 116);
       if ('letterSpacing' in lctx) lctx.letterSpacing = '0px';
     }
-    // score — big, bold, with a soft glow for maximum legibility
+    // score — bold and clear, sized to sit comfortably under the label
     ctx.save();
-    ctx.font = '800 92px "Archivo", system-ui, sans-serif';
-    ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 3;
+    ctx.font = '800 62px "Archivo", system-ui, sans-serif';
+    ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 3;
     ctx.fillStyle = PAL.text;
-    ctx.fillText(spec.title, W / 2, H - 38);
+    ctx.fillText(spec.title, W / 2, H - 46);
     ctx.restore();
     ctx.textAlign = 'left';
     return;
