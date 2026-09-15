@@ -447,29 +447,27 @@ body {
 @media (hover: hover) and (pointer: fine) { .studio-mode:not([data-on='true']):hover { color: var(--text-hi); background: rgba(18, 26, 21, 0.7); } }
 
 /* ── Post Studio V2 — quick / meme maker ── */
-.meme-studio { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 22px; align-items: start; }
-.meme-controls { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 78px; max-height: calc(100vh - 100px); overflow-y: auto; padding-right: 4px; }
-.meme-controls::-webkit-scrollbar { width: 6px; }
-.meme-controls::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+.meme-studio { display: grid; grid-template-columns: minmax(0, 312px) minmax(0, 1fr); gap: 26px; align-items: start; }
+.meme-controls { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 84px; }
 .meme-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .meme-addrow { display: flex; gap: 6px; }
-.meme-mini { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border-strong); background: rgba(12,18,15,0.5); color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; cursor: pointer; transition: border-color 160ms ease, background 160ms ease, transform 140ms var(--ease-out2); }
+.meme-mini { display: inline-flex; align-items: center; padding: 6px 11px; border-radius: 8px; border: 1px solid var(--border-strong); background: rgba(12,18,15,0.5); color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.05em; cursor: pointer; transition: border-color 160ms ease, background 160ms ease, transform 140ms var(--ease-out2); }
 .meme-mini:active { transform: scale(0.95); }
 .meme-mini[data-dim='true'] { opacity: 0.4; pointer-events: none; }
 .meme-layers { display: flex; flex-direction: column; gap: 5px; }
 .meme-layer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; border-radius: 9px; border: 1px solid var(--border); background: rgba(10,15,12,0.5); cursor: pointer; transition: border-color 160ms ease, background 160ms ease; }
 .meme-layer[data-on='true'] { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: rgba(228,200,119,0.07); }
-.meme-layer__name { font-size: 10px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meme-layer__name { font-size: 11px; color: var(--text-hi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meme-layer__x { flex: none; width: 18px; height: 18px; border: none; border-radius: 5px; background: none; color: var(--mist); font-size: 15px; line-height: 1; cursor: pointer; transition: color 140ms ease, background 140ms ease; }
 .meme-layer__x:hover { color: #ff8f6b; background: rgba(255,143,107,0.1); }
 .meme-seg { display: flex; gap: 5px; flex-wrap: wrap; }
-.meme-chip { flex: 1 1 auto; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: rgba(12,18,15,0.5); color: var(--mist); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; cursor: pointer; transition: color 150ms ease, border-color 150ms ease, background 150ms ease, transform 140ms var(--ease-out2); }
+.meme-chip { flex: 1 1 auto; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--border-strong); background: rgba(12,18,15,0.55); color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.05em; cursor: pointer; transition: color 150ms ease, border-color 150ms ease, background 150ms ease, transform 140ms var(--ease-out2); }
 .meme-chip:active { transform: scale(0.95); }
 .meme-chip[data-on='true'] { color: var(--bg, #0e1613); background: var(--primary); border-color: var(--primary); font-weight: 600; }
 .meme-templates { display: flex; flex-wrap: wrap; gap: 7px; }
 .meme-tpl {
   padding: 7px 12px; border-radius: 999px; cursor: pointer; border: 1px solid var(--border); background: rgba(15, 22, 18, 0.5);
-  font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em; color: var(--mist);
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.05em; color: var(--text);
   transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 150ms var(--ease-out2);
 }
 .meme-tpl:active { transform: scale(0.96); }
@@ -477,7 +475,7 @@ body {
 @media (hover: hover) and (pointer: fine) { .meme-tpl:not([data-on='true']):hover { color: var(--text-hi); border-color: var(--border-strong); } }
 .meme-fields { display: flex; flex-direction: column; gap: 12px; }
 .meme-field { display: flex; flex-direction: column; gap: 6px; }
-.meme-field__label { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mist); }
+.meme-field__label { font-size: 10.5px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-hi); font-weight: 600; }
 .meme-input {
   width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; resize: vertical;
   border: 1px solid var(--border); background: rgba(12, 18, 15, 0.55); color: var(--text); font-size: 13.5px; line-height: 1.5; outline: none;
@@ -494,8 +492,8 @@ body {
 .meme-actions { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
 
 /* grouped control sections */
-.meme-section { display: flex; flex-direction: column; gap: 9px; padding: 14px; border: 1px solid var(--border); border-radius: 13px; background: rgba(12, 18, 15, 0.4); }
-.meme-hint { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(198, 210, 202, 0.45); margin: 2px 0 0; }
+.meme-section { display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 15px; border: 1px solid var(--border-strong); border-radius: 14px; background: rgba(14, 21, 17, 0.62); }
+.meme-hint { font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(198, 210, 202, 0.55); margin: 2px 0 0; }
 
 /* range sliders — crisp, on-brand */
 .meme-range { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 55%, transparent), var(--border)); outline: none; cursor: pointer; }
@@ -519,7 +517,7 @@ body {
 .meme-adjgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
 .meme-adjgrid .meme-adj { grid-template-columns: 38px 1fr; gap: 7px; }
 .meme-adj { display: grid; grid-template-columns: 58px 1fr; align-items: center; gap: 10px; }
-.meme-adj span { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mist); }
+.meme-adj span { font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mist); }
 
 @media (max-width: 860px) {
   .meme-studio { grid-template-columns: 1fr; gap: 20px; }

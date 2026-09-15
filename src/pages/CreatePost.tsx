@@ -43,7 +43,7 @@ export function CreatePost() {
 
   return (
     <div style={{ paddingTop: 82, paddingBottom: 56 }}>
-      <Container style={{ maxWidth: 1180 }}>
+      <Container style={{ maxWidth: mode === 'quick' ? 1560 : 1180 }}>
         {/* shared header + the divider between a normal post and a quick post */}
         <div className="studio-head">
           <Kicker>Post Studio</Kicker>

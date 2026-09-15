@@ -3,7 +3,7 @@ import { useAudio } from '@/audio/AudioProvider';
 
 // 16:9 HD canvas. Backing store is super-sampled, so downloads are well past 1080p.
 const W = 1920, H = 1080;
-const FOOTER = 78;                 // solid strip at the very bottom — branding lives here, never on the image
+const FOOTER = 96;                 // solid strip at the very bottom — branding lives here, never on the image
 const STAGE_H = H - FOOTER;
 const RENDER_SCALE = 2;            // 3840×2160 backing → crisp, HD export
 
@@ -134,11 +134,9 @@ export function render(canvas: HTMLCanvasElement, c: Comp, selId: string | null,
     g.addColorStop(1, `rgba(6,10,8,${(b * 0.85).toFixed(3)})`);
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, STAGE_H);
   } else if (!images.length) {
-    ctx.strokeStyle = 'rgba(56,224,160,0.05)'; ctx.lineWidth = 1;
-    for (let x = 0; x <= W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, STAGE_H); ctx.stroke(); }
-    for (let y = 0; y <= STAGE_H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-    const glow = ctx.createRadialGradient(W / 2, STAGE_H / 2, 60, W / 2, STAGE_H / 2, 760);
-    glow.addColorStop(0, 'rgba(53,207,155,0.12)'); glow.addColorStop(1, 'rgba(53,207,155,0)');
+    // clean empty state — a single soft glow, no noisy grid
+    const glow = ctx.createRadialGradient(W / 2, STAGE_H * 0.44, 40, W / 2, STAGE_H * 0.44, 820);
+    glow.addColorStop(0, 'rgba(53,207,155,0.10)'); glow.addColorStop(1, 'rgba(53,207,155,0)');
     ctx.fillStyle = glow; ctx.fillRect(0, 0, W, STAGE_H);
   }
 
@@ -155,10 +153,17 @@ export function render(canvas: HTMLCanvasElement, c: Comp, selId: string | null,
   }
   ctx.restore();  // end stage clip
 
-  // footer credit — centered, on the solid bottom strip only
+  // footer — a short gold underline, with the credit centered neatly beneath it
+  const midY = STAGE_H + 30;
+  ctx.strokeStyle = 'rgba(236,210,138,0.55)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(W / 2 - 90, midY); ctx.lineTo(W / 2 + 90, midY); ctx.stroke();
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-  ctx.font = '600 22px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.dim;
-  ctx.fillText('Made via Atlas for Prosper', W / 2, STAGE_H + 50);
+  ctx.font = '600 23px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.gold;
+  const label = 'MADE VIA ATLAS FOR PROSPER';
+  const lctx = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
+  if ('letterSpacing' in lctx) lctx.letterSpacing = '0.18em';
+  ctx.fillText(label, W / 2 + 4, midY + 40);
+  if ('letterSpacing' in lctx) lctx.letterSpacing = '0px';
   ctx.textAlign = 'left';
 
   // gold frame around the whole card (kept as before)
