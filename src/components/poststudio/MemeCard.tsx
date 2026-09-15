@@ -10,7 +10,16 @@ const PAL = {
 };
 
 export type MemeTemplate = 'statement' | 'gm' | 'versus' | 'stat' | 'octo';
-export interface MemeOpts { template: MemeTemplate; a: string; b: string; c?: string; img?: HTMLImageElement | null }
+
+export interface ImgLayer { img: HTMLImageElement; zoom: number; ox: number; oy: number }
+export interface MemeOpts {
+  template: MemeTemplate;
+  a: string; b: string; c?: string;
+  images: (ImgLayer | null)[];
+  bgColor: string;
+  overlay: number;      // 0..1 darkening strength
+  textY: number;        // 0..1 vertical anchor for the hook block
+}
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath(); ctx.moveTo(x + r, y);
@@ -35,28 +44,55 @@ function wrapCentered(ctx: CanvasRenderingContext2D, text: string, cx: number, y
   shown.forEach((l, i) => ctx.fillText(l, cx, y + i * lh));
   return y + (shown.length - 1) * lh;
 }
-function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
-  const ir = img.width / img.height, r = w / h;
-  let dw = w, dh = h;
-  if (ir > r) { dh = h; dw = h * ir; } else { dw = w; dh = w / ir; }
-  ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+
+/** Cover-draw an image inside a region, with independent zoom and fractional offset. */
+function drawLayer(ctx: CanvasRenderingContext2D, l: ImgLayer, rx: number, ry: number, rw: number, rh: number) {
+  const ir = l.img.width / l.img.height, r = rw / rh;
+  let dw: number, dh: number;
+  if (ir > r) { dh = rh; dw = rh * ir; } else { dw = rw; dh = rw / ir; }
+  dw *= l.zoom; dh *= l.zoom;
+  const dx = rx + (rw - dw) / 2 + l.ox * rw;
+  const dy = ry + (rh - dh) / 2 + l.oy * rh;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(rx, ry, rw, rh); ctx.clip();
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(l.img, dx, dy, dw, dh);
+  ctx.restore();
 }
 
 export function drawMeme(canvas: HTMLCanvasElement, o: MemeOpts) {
   const ctx = canvas.getContext('2d'); if (!ctx) return;
-  const dpr = 2; canvas.width = W * dpr; canvas.height = H * dpr;
+  const dpr = Math.min(3, (typeof window !== 'undefined' ? window.devicePixelRatio : 2) || 2) * 1.35;
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
 
-  // background
-  if (o.img) {
-    drawCover(ctx, o.img, 0, 0, W, H);
+  const layers = o.images.filter((l): l is ImgLayer => !!l);
+
+  // 1) background colour (always painted — shows through where images don't reach)
+  ctx.fillStyle = o.bgColor || PAL.bg1;
+  ctx.fillRect(0, 0, W, H);
+
+  // 2) image layer(s)
+  if (layers.length === 1) {
+    drawLayer(ctx, layers[0], 0, 0, W, H);
+  } else if (layers.length >= 2) {
+    drawLayer(ctx, layers[0], 0, 0, W / 2, H);
+    drawLayer(ctx, layers[1], W / 2, 0, W / 2, H);
+    // seam
+    ctx.strokeStyle = 'rgba(236,210,138,0.35)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(W / 2, 28); ctx.lineTo(W / 2, H - 28); ctx.stroke();
+  }
+
+  // 3) readability overlay (only meaningful with imagery)
+  if (layers.length) {
     const sc = ctx.createLinearGradient(0, 0, 0, H);
-    sc.addColorStop(0, 'rgba(6,10,8,0.58)'); sc.addColorStop(1, 'rgba(6,10,8,0.82)');
+    const base = Math.max(0, Math.min(1, o.overlay));
+    sc.addColorStop(0, `rgba(6,10,8,${(base * 0.75).toFixed(3)})`);
+    sc.addColorStop(1, `rgba(6,10,8,${Math.min(0.96, base * 0.75 + 0.28).toFixed(3)})`);
     ctx.fillStyle = sc; ctx.fillRect(0, 0, W, H);
   } else {
-    const g = ctx.createLinearGradient(0, 0, W, H);
-    g.addColorStop(0, PAL.bg1); g.addColorStop(1, PAL.bg2);
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // no image → the signature grid + glow so it never looks bare
     ctx.strokeStyle = 'rgba(56,224,160,0.05)'; ctx.lineWidth = 1;
     for (let x = 0; x <= W; x += 48) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
     for (let y = 0; y <= H; y += 48) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
@@ -78,54 +114,63 @@ export function drawMeme(canvas: HTMLCanvasElement, o: MemeOpts) {
 
   ctx.textAlign = 'center';
   const CX = W / 2;
+  // hook anchor — vertical position is user-controlled (clamped to keep clear of header/footer)
+  const anchorY = 150 + Math.max(0, Math.min(1, o.textY)) * (H - 300);
+
+  const shadowText = (fn: () => void) => {
+    ctx.save();
+    if (layers.length) { ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 2; }
+    fn();
+    ctx.restore();
+  };
 
   if (o.template === 'gm') {
     const word = (o.a || 'GM').toUpperCase();
     const s = fit(ctx, word, '"Rajdhani", sans-serif', '700', 200, W - M * 2, 60);
-    ctx.font = `700 ${s}px "Rajdhani", sans-serif`; ctx.fillStyle = PAL.text;
-    ctx.fillText(word, CX, H / 2 + s * 0.18);
+    shadowText(() => { ctx.font = `700 ${s}px "Rajdhani", sans-serif`; ctx.fillStyle = PAL.text; ctx.fillText(word, CX, anchorY + s * 0.18); });
     ctx.font = '400 30px "Archivo", sans-serif'; ctx.fillStyle = PAL.emeraldGlow;
-    wrapCentered(ctx, o.b || 'the markets are about to open.', CX, H / 2 + s * 0.18 + 54, W - M * 2, 40, 2);
+    wrapCentered(ctx, o.b || 'the markets are about to open.', CX, anchorY + s * 0.18 + 54, W - M * 2, 40, 2);
   } else if (o.template === 'stat') {
     const num = o.a || '000';
     const s = fit(ctx, num, '"Rajdhani", sans-serif', '700', 190, W - M * 2, 70);
-    ctx.font = `700 ${s}px "Rajdhani", sans-serif`; ctx.fillStyle = PAL.gold; ctx.fillText(num, CX, H / 2 - 10);
+    shadowText(() => { ctx.font = `700 ${s}px "Rajdhani", sans-serif`; ctx.fillStyle = PAL.gold; ctx.fillText(num, CX, anchorY); });
     ctx.font = '600 22px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.mist;
-    ctx.fillText((o.b || 'label').toUpperCase(), CX, H / 2 + 44);
-    if (o.c) { ctx.font = '400 26px "Archivo", sans-serif'; ctx.fillStyle = PAL.text; wrapCentered(ctx, o.c, CX, H / 2 + 96, W - M * 2, 34, 2); }
+    ctx.fillText((o.b || 'label').toUpperCase(), CX, anchorY + 54);
+    if (o.c) { ctx.font = '400 26px "Archivo", sans-serif'; ctx.fillStyle = PAL.text; wrapCentered(ctx, o.c, CX, anchorY + 106, W - M * 2, 34, 2); }
   } else if (o.template === 'versus') {
     ctx.strokeStyle = 'rgba(234,230,218,0.14)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(CX, 130); ctx.lineTo(CX, H - 120); ctx.stroke();
     const half = (W - M * 2) / 2 - 24;
-    // left — the old way
     ctx.font = '600 16px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.dim;
     ctx.fillText('THE OLD WAY', M + half / 2 + 8, 190);
     ctx.font = '600 34px "Rajdhani", sans-serif'; ctx.fillStyle = PAL.mist;
     wrapCentered(ctx, o.a || 'trust me bro', M + half / 2 + 8, 260, half, 42, 4);
-    // right — with prosper
     ctx.font = '600 16px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.emeraldGlow;
     ctx.fillText('WITH PROSPER', CX + half / 2 + 40, 190);
     ctx.font = '600 34px "Rajdhani", sans-serif'; ctx.fillStyle = PAL.gold;
     wrapCentered(ctx, o.b || 'check it on-chain', CX + half / 2 + 40, 260, half, 42, 4);
   } else if (o.template === 'octo') {
-    ctx.font = '60px "Archivo", sans-serif'; ctx.fillText('🐙', CX, 220);
+    ctx.font = '60px "Archivo", sans-serif'; ctx.fillText('🐙', CX, anchorY - 80);
     const s = fit(ctx, o.a || 'read the tape, not the hype.', '"Rajdhani", sans-serif', '600', 56, W - M * 2, 34);
-    ctx.font = `600 ${s}px "Rajdhani", sans-serif`; ctx.fillStyle = PAL.text;
-    const endY = wrapCentered(ctx, `“${o.a || 'read the tape, not the hype.'}”`, CX, 300, W - M * 2, s + 12, 3);
+    let endY = 0;
+    shadowText(() => { ctx.font = `600 ${s}px "Rajdhani", sans-serif`; ctx.fillStyle = PAL.text; endY = wrapCentered(ctx, `“${o.a || 'read the tape, not the hype.'}”`, CX, anchorY, W - M * 2, s + 12, 3); });
     ctx.font = '600 18px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.gold;
     ctx.fillText(`— ${o.b || 'Professor Octo'}`, CX, endY + 54);
   } else {
-    // statement
+    // statement — hook + subline + optional extra line
     const s = fit(ctx, o.a || 'your hook goes here', '"Rajdhani", sans-serif', '700', 70, W - M * 2, 32);
-    ctx.font = `700 ${s}px "Rajdhani", sans-serif`; ctx.fillStyle = PAL.text;
-    const endY = wrapCentered(ctx, o.a || 'Your hook goes here', CX, H / 2 - 20, W - M * 2, s + 12, 3);
-    if (o.b) { ctx.font = '400 27px "Archivo", sans-serif'; ctx.fillStyle = PAL.emeraldGlow; wrapCentered(ctx, o.b, CX, endY + 52, W - M * 2 - 60, 36, 2); }
+    let endY = anchorY;
+    shadowText(() => { ctx.font = `700 ${s}px "Rajdhani", sans-serif`; ctx.fillStyle = PAL.text; endY = wrapCentered(ctx, o.a || 'Your hook goes here', CX, anchorY, W - M * 2, s + 12, 3); });
+    if (o.b) { ctx.font = '400 27px "Archivo", sans-serif'; ctx.fillStyle = PAL.emeraldGlow; endY = wrapCentered(ctx, o.b, CX, endY + 52, W - M * 2 - 60, 36, 2); }
+    if (o.c) { ctx.font = '600 20px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.mist; wrapCentered(ctx, o.c, CX, endY + 46, W - M * 2 - 60, 30, 2); }
   }
 
-  // footer
+  // footer — always pinned to the bottom of the outline
   ctx.textAlign = 'left';
-  ctx.font = '600 14px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.dim;
-  ctx.fillText('pros-per.xyz · via @ProsperTicker', M, H - 52);
+  ctx.font = '600 14px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.gold;
+  ctx.fillText('pros-per.xyz', M, H - 52);
+  const uW = ctx.measureText('pros-per.xyz').width;
+  ctx.fillStyle = PAL.dim; ctx.fillText('· via @ProsperTicker', M + uW + 10, H - 52);
   ctx.textAlign = 'right';
   ctx.font = '600 12px "JetBrains Mono", monospace'; ctx.fillStyle = PAL.dim;
   ctx.fillText('Made via Atlas for Prosper', W - M, H - 52);
@@ -134,25 +179,31 @@ export function drawMeme(canvas: HTMLCanvasElement, o: MemeOpts) {
 
 interface Tpl { id: MemeTemplate; label: string; fields: { key: 'a' | 'b' | 'c'; label: string; ph: string; area?: boolean }[]; caption: (o: MemeOpts) => string }
 const TEMPLATES: Tpl[] = [
-  { id: 'statement', label: 'Statement', fields: [{ key: 'a', label: 'Hook', ph: 'Tokenization made the assets. Prosper makes the market.', area: true }, { key: 'b', label: 'Subline', ph: 'The Performance Market for Liquid Alpha.' }], caption: (o) => `${o.a}` },
+  { id: 'statement', label: 'Statement', fields: [{ key: 'a', label: 'Hook', ph: 'Tokenization made the assets. Prosper makes the market.', area: true }, { key: 'b', label: 'Subline', ph: 'The Performance Market for Liquid Alpha.' }, { key: 'c', label: 'Extra line (optional)', ph: 'This or that — you decide.' }], caption: (o) => `${o.a}` },
   { id: 'gm', label: 'GM', fields: [{ key: 'a', label: 'Big word', ph: 'GM' }, { key: 'b', label: 'Line', ph: 'the markets are about to open.' }], caption: (o) => `${o.a || 'GM'} — ${o.b || 'the markets are about to open on Prosper.'}` },
   { id: 'versus', label: 'This vs That', fields: [{ key: 'a', label: 'The old way', ph: 'trust me bro' }, { key: 'b', label: 'With Prosper', ph: 'check it on-chain' }], caption: (o) => `${o.a} → ${o.b}. That's the difference Prosper makes.` },
   { id: 'stat', label: 'Number drop', fields: [{ key: 'a', label: 'Number', ph: '$50K' }, { key: 'b', label: 'Label', ph: 'Founding Curator seed' }, { key: 'c', label: 'Line', ph: 'Bring your edge on-chain.' }], caption: (o) => `${o.a} ${o.b}. ${o.c ?? ''}`.trim() },
   { id: 'octo', label: 'Octo says', fields: [{ key: 'a', label: 'Quote', ph: 'read the tape, not the hype.', area: true }, { key: 'b', label: 'Who', ph: 'Professor Octo' }], caption: (o) => `“${o.a}” — ${o.b || 'Professor Octo'}` },
 ];
 
+const BG_SWATCHES = ['#0e1613', '#080c0a', '#12100a', '#0a1016', '#160a12', '#1a1206', '#0b0b0d'];
+
 function siteUrl() { return typeof window !== 'undefined' ? window.location.origin : 'https://pros-per.xyz'; }
+const newLayer = (img: HTMLImageElement): ImgLayer => ({ img, zoom: 1, ox: 0, oy: 0 });
 
 export function MemeStudio() {
   const { click } = useAudio();
   const ref = useRef<HTMLCanvasElement>(null);
   const [tid, setTid] = useState<MemeTemplate>('statement');
   const [vals, setVals] = useState<Record<string, string>>({});
-  const [img, setImg] = useState<HTMLImageElement | null>(null);
+  const [images, setImages] = useState<(ImgLayer | null)[]>([null, null]);
+  const [bgColor, setBgColor] = useState('#0e1613');
+  const [overlay, setOverlay] = useState(0.55);
+  const [textY, setTextY] = useState(0.5);
   const [copied, setCopied] = useState(false);
   const tpl = TEMPLATES.find((t) => t.id === tid)!;
 
-  const opts: MemeOpts = { template: tid, a: vals[`${tid}-a`] ?? '', b: vals[`${tid}-b`] ?? '', c: vals[`${tid}-c`] ?? '', img };
+  const opts: MemeOpts = { template: tid, a: vals[`${tid}-a`] ?? '', b: vals[`${tid}-b`] ?? '', c: vals[`${tid}-c`] ?? '', images, bgColor, overlay, textY };
 
   useEffect(() => {
     const c = ref.current; if (!c) return;
@@ -161,12 +212,17 @@ export function MemeStudio() {
     render();
   });
 
-  const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onUpload = (slot: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return;
     const url = URL.createObjectURL(f); const im = new Image();
-    im.onload = () => { setImg(im); URL.revokeObjectURL(url); };
+    im.onload = () => { setImages((arr) => arr.map((l, i) => i === slot ? newLayer(im) : l)); URL.revokeObjectURL(url); };
     im.src = url;
+    e.target.value = '';
   };
+  const patchLayer = (slot: number, patch: Partial<ImgLayer>) =>
+    setImages((arr) => arr.map((l, i) => (i === slot && l) ? { ...l, ...patch } : l));
+  const clearLayer = (slot: number) => { click(); setImages((arr) => arr.map((l, i) => i === slot ? null : l)); };
+
   const blob = () => new Promise<Blob | null>((res) => ref.current?.toBlob((b) => res(b), 'image/png'));
   const download = async () => { click(); const b = await blob(); if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `prosper-atlas-${tid}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
   const copyImg = async () => { click(); try { const b = await blob(); if (!b) throw new Error(); await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]); setCopied(true); } catch { download(); } setTimeout(() => setCopied(false), 2000); };
@@ -180,6 +236,7 @@ export function MemeStudio() {
             <button key={t.id} onClick={() => { click(); setTid(t.id); }} className="pressable meme-tpl" data-on={t.id === tid ? 'true' : 'false'}>{t.label}</button>
           ))}
         </div>
+
         <div className="meme-fields">
           {tpl.fields.map((f) => (
             <label key={f.key} className="meme-field">
@@ -189,13 +246,62 @@ export function MemeStudio() {
                 : <input value={vals[`${tid}-${f.key}`] ?? ''} onChange={(e) => setVals((v) => ({ ...v, [`${tid}-${f.key}`]: e.target.value }))} placeholder={f.ph} className="meme-input font-display" />}
             </label>
           ))}
-          <div className="meme-upload">
-            <label className="pressable meme-upload__btn font-mono">
-              {img ? 'Change image' : 'Add your image'}
-              <input type="file" accept="image/*" onChange={onUpload} hidden />
+
+          {/* text placement */}
+          <label className="meme-field">
+            <span className="font-mono meme-field__label">Text position — vertical</span>
+            <input type="range" min={0} max={1} step={0.01} value={textY} onChange={(e) => setTextY(+e.target.value)} className="meme-range" />
+          </label>
+        </div>
+
+        {/* background + overlay */}
+        <div className="meme-section">
+          <span className="font-mono meme-field__label">Background colour</span>
+          <div className="meme-swatches">
+            {BG_SWATCHES.map((c) => (
+              <button key={c} onClick={() => { click(); setBgColor(c); }} className="pressable meme-swatch" data-on={c === bgColor ? 'true' : 'false'} style={{ background: c }} aria-label={`Background ${c}`} />
+            ))}
+            <label className="meme-swatch meme-swatch--pick" aria-label="Custom background colour">
+              <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} />
+              <span>+</span>
             </label>
-            {img && <button onClick={() => { click(); setImg(null); }} className="pressable meme-upload__clear font-mono">Remove</button>}
           </div>
+          <label className="meme-field" style={{ marginTop: 12 }}>
+            <span className="font-mono meme-field__label">Image darken (for legible text)</span>
+            <input type="range" min={0} max={1} step={0.01} value={overlay} onChange={(e) => setOverlay(+e.target.value)} className="meme-range" />
+          </label>
+        </div>
+
+        {/* two adjustable image slots */}
+        <div className="meme-section">
+          <span className="font-mono meme-field__label">Images — add up to two</span>
+          <div className="meme-imgslots">
+            {[0, 1].map((slot) => {
+              const layer = images[slot];
+              return (
+                <div key={slot} className="meme-imgslot">
+                  <div className="meme-imgslot__head">
+                    <label className="pressable meme-upload__btn font-mono">
+                      {layer ? `Image ${slot + 1} ✓` : `Add image ${slot + 1}`}
+                      <input type="file" accept="image/*" onChange={onUpload(slot)} hidden />
+                    </label>
+                    {layer && <button onClick={() => clearLayer(slot)} className="pressable meme-upload__clear font-mono">Remove</button>}
+                  </div>
+                  {layer && (
+                    <div className="meme-imgadjust">
+                      <label className="meme-adj"><span className="font-mono">Zoom</span>
+                        <input type="range" min={0.5} max={3} step={0.01} value={layer.zoom} onChange={(e) => patchLayer(slot, { zoom: +e.target.value })} className="meme-range" /></label>
+                      <label className="meme-adj"><span className="font-mono">Move ↔</span>
+                        <input type="range" min={-0.5} max={0.5} step={0.01} value={layer.ox} onChange={(e) => patchLayer(slot, { ox: +e.target.value })} className="meme-range" /></label>
+                      <label className="meme-adj"><span className="font-mono">Move ↕</span>
+                        <input type="range" min={-0.5} max={0.5} step={0.01} value={layer.oy} onChange={(e) => patchLayer(slot, { oy: +e.target.value })} className="meme-range" /></label>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <p className="font-mono meme-hint">Two images sit side-by-side; one fills the whole card.</p>
         </div>
       </div>
 
