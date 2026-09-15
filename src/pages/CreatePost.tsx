@@ -75,13 +75,10 @@ export function CreatePost() {
                     {g.topics.map((t) => (
                       <motion.div key={t.id} variants={rise} className="studio-topic-wrap">
                         <Link to={`/create/${t.id}`} className="pressable studio-topic" aria-label={`Open ${t.label}`} style={{ ['--cat' as string]: color } as React.CSSProperties}>
-                          <span aria-hidden className="studio-topic__wash" />
-                          <div className="studio-topic__top">
-                            <span className="studio-topic__no font-mono">{String(order.get(t.id) ?? 0).padStart(2, '0')}</span>
-                            <span className="studio-topic__open font-mono"><span className="studio-topic__arrow"><IconArrow size={13} /></span></span>
-                          </div>
+                          <span aria-hidden className="studio-topic__ghost font-mono">{String(order.get(t.id) ?? 0).padStart(2, '0')}</span>
                           <div className="studio-topic__label font-head">{t.label}</div>
                           <div className="studio-topic__hint font-display">{t.hint}</div>
+                          <span className="studio-topic__go font-mono">Open <span className="studio-topic__arrow"><IconArrow size={12} /></span></span>
                         </Link>
                       </motion.div>
                     ))}

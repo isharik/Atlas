@@ -118,27 +118,27 @@ export function CuratorStudio() {
   const shareCaption = `Drafted a Prosper Vault in the Atlas Curator Studio${s.name ? `: "${s.name}"` : ''}${s.category ? ` (${s.category})` : ''} — ${s.perfFee}% perf fee, ${s.maxDrawdown}% max drawdown. Design yours:`;
 
   return (
-    <div style={{ paddingTop: 100, paddingBottom: 96 }}>
+    <div style={{ paddingTop: 80, paddingBottom: 56 }}>
       <Container style={{ maxWidth: 1120 }}>
         <Kicker>Curator Studio</Kicker>
-        <motion.h1 className="font-display" style={{ fontWeight: 300, fontSize: 'clamp(2.1rem,5vw,3.6rem)', color: 'var(--text-hi)', margin: '14px 0 12px', letterSpacing: '-0.01em', lineHeight: 1.05 }}
-          initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease }}>
+        <motion.h1 className="font-display" style={{ fontWeight: 300, fontSize: 'clamp(1.9rem,4vw,3rem)', color: 'var(--text-hi)', margin: '10px 0 8px', letterSpacing: '-0.01em', lineHeight: 1.04 }}
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease }}>
           Design your <em style={{ fontStyle: 'italic', color: 'var(--primary)' }}>Vault.</em>
         </motion.h1>
-        <motion.p className="font-display" style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--mist)', maxWidth: 640 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>
+        <motion.p className="font-display" style={{ fontSize: 14, lineHeight: 1.65, color: 'var(--mist)', maxWidth: 620 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>
           Curators set the thesis, category, hard-coded risk parameters and fees for a Vault. Draft yours here, get a clean spec sheet to share, then take it to the real application.
         </motion.p>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} style={{ marginTop: 16 }}>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} style={{ marginTop: 12 }}>
           <span className="font-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(198,210,202,0.7)', border: '1px solid var(--border)', borderRadius: 999, padding: '5px 12px' }}>
             <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--mist)' }} />
             Draft tool · not an official submission
           </span>
         </motion.div>
 
-        <div className="studio-cols" style={{ marginTop: 40 }}>
+        <div className="studio-cols" style={{ marginTop: 26 }}>
           {/* BUILDER */}
           <motion.div variants={rise} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.15 }}
-            style={{ padding: '26px 28px', borderRadius: 18, border: '1px solid var(--border)', background: 'linear-gradient(180deg, rgba(10,15,11,0.6), rgba(13,19,16,0.72))', display: 'flex', flexDirection: 'column', gap: 24 }}>
+            style={{ padding: '20px 22px', borderRadius: 16, border: '1px solid var(--border)', background: 'linear-gradient(180deg, rgba(10,15,11,0.6), rgba(13,19,16,0.72))', display: 'flex', flexDirection: 'column', gap: 18 }}>
             <span className="eyebrow" style={{ fontSize: 10.5, letterSpacing: '0.34em' }}>Build the spec</span>
 
             <div>
@@ -242,7 +242,7 @@ export function CuratorStudio() {
         </div>
 
         {/* actions */}
-        <motion.div variants={rise} initial="hidden" whileInView="show" viewport={{ once: true }} style={{ marginTop: 34 }}>
+        <motion.div variants={rise} initial="hidden" whileInView="show" viewport={{ once: true }} style={{ marginTop: 24 }}>
           <div className="flex items-center gap-3 flex-wrap" style={{ justifyContent: 'center' }}>
             <button onClick={() => { click(); setShareOpen(true); }} className="pressable font-mono studio-action" style={{ color: 'var(--primary)', borderColor: 'rgba(228,200,119,0.5)', background: 'linear-gradient(180deg, rgba(228,200,119,0.12), rgba(228,200,119,0.03))' }}>Share as card</button>
             <button onClick={copySpec} className="pressable font-mono studio-action">Copy spec sheet</button>
